@@ -4,6 +4,7 @@ audio submission endpoint that drives the Stage 9 grading engine.
 import io
 import json
 import logging
+import re
 import time
 import uuid
 from datetime import date as date_cls
@@ -20,7 +21,7 @@ from app import db
 from app.config import SONGS_DIR, STATIC_DIR, TEMPLATES_DIR, UPLOADS_DIR, SAMPLE_RATE
 from app.dsp import solfege as solfege_dsp
 from app.dsp.grading import grade_submission
-from app.schemas import AssessmentReport, SongDetail, SongSummary, SubmissionRecord
+from app.schemas import AssessmentReport, SongDetail, SongPayload, SongSummary, SubmissionRecord
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("sight_singing")
@@ -45,6 +46,37 @@ def _list_songs() -> list:
     for path in sorted(SONGS_DIR.glob("*.json")):
         songs.append(json.loads(path.read_text(encoding="utf-8")))
     return songs
+
+
+def _slugify(title: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", title.strip().lower()).strip("-")
+    return slug or "exercise"
+
+
+def _unique_song_id(title: str) -> str:
+    base = _slugify(title)
+    song_id = base
+    n = 2
+    while (SONGS_DIR / f"{song_id}.json").exists():
+        song_id = f"{base}-{n}"
+        n += 1
+    return song_id
+
+
+def _save_song(song_id: str, payload: SongPayload) -> dict:
+    if not payload.notes:
+        raise HTTPException(status_code=400, detail="An exercise needs at least one note.")
+    song = {
+        "id": song_id,
+        "title": payload.title.strip(),
+        "difficulty": payload.difficulty.strip(),
+        "key": payload.key.strip(),
+        "tempo_bpm": payload.tempo_bpm,
+        "abc": payload.abc,
+        "notes": [n.model_dump() for n in payload.notes],
+    }
+    (SONGS_DIR / f"{song_id}.json").write_text(json.dumps(song, indent=2), encoding="utf-8")
+    return song
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -93,6 +125,22 @@ async def api_list_songs():
 @app.get("/api/songs/{song_id}", response_model=SongDetail)
 async def api_get_song(song_id: str):
     return SongDetail(**_load_song(song_id))
+
+
+@app.post("/api/songs", response_model=SongDetail, status_code=201)
+async def api_create_song(payload: SongPayload):
+    if not payload.title.strip():
+        raise HTTPException(status_code=400, detail="Title is required.")
+    song_id = _unique_song_id(payload.title)
+    song = _save_song(song_id, payload)
+    return SongDetail(**song)
+
+
+@app.put("/api/songs/{song_id}", response_model=SongDetail)
+async def api_update_song(song_id: str, payload: SongPayload):
+    _load_song(song_id)  # 404s if it doesn't already exist
+    song = _save_song(song_id, payload)
+    return SongDetail(**song)
 
 
 @app.get("/api/status")
