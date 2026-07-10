@@ -5,6 +5,8 @@
 <style>
   #chroma-canvas, #waveform-canvas { width: 100%; display: block; }
   .note-cell { transition: background-color .25s ease, transform .15s ease; }
+  #report-card:not(.hidden) { animation: report-in .3s ease-out; }
+  @keyframes report-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 {% endblock %}
 
@@ -70,14 +72,19 @@
     </div>
 
     <div id="report-card" class="card p-6 hidden">
-      <h3 class="font-semibold mb-4">Assessment Report</h3>
-      <div class="grid grid-cols-2 gap-4 text-center">
+      <h3 class="font-semibold mb-1">Assessment Report</h3>
+      <p id="overall-label" class="text-sm font-medium mb-4">&nbsp;</p>
+      <div class="grid grid-cols-3 gap-4 text-center">
         <div>
-          <div class="text-3xl font-bold text-brand-600 dark:text-brand-400" id="pitch-score">&mdash;</div>
+          <div class="text-3xl font-bold" id="overall-score">&mdash;</div>
+          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-1">Overall</div>
+        </div>
+        <div>
+          <div class="text-3xl font-bold" id="pitch-score">&mdash;</div>
           <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-1">Pitch Accuracy</div>
         </div>
         <div>
-          <div class="text-3xl font-bold text-brand-600 dark:text-brand-400" id="pronun-score">&mdash;</div>
+          <div class="text-3xl font-bold" id="pronun-score">&mdash;</div>
           <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-1">Pronunciation</div>
         </div>
       </div>

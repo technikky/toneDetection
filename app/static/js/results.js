@@ -1,10 +1,37 @@
 /** Stage 10: renders the Stage 9 grading report — score tiles, per-note
  * grid, and a time-aligned pitch error graph.
  */
+const SCORE_COLOR_CLASSES = [
+  "text-emerald-600", "dark:text-emerald-400",
+  "text-amber-600", "dark:text-amber-400",
+  "text-rose-600", "dark:text-rose-400",
+];
+
+function scoreColorClasses(score) {
+  if (score >= 85) return ["text-emerald-600", "dark:text-emerald-400"];
+  if (score >= 65) return ["text-amber-600", "dark:text-amber-400"];
+  return ["text-rose-600", "dark:text-rose-400"];
+}
+
+function setScoreTile(elId, score) {
+  const el = document.getElementById(elId);
+  el.textContent = `${score}%`;
+  el.classList.remove(...SCORE_COLOR_CLASSES);
+  el.classList.add(...scoreColorClasses(score));
+}
+
 function renderReport(report) {
   document.getElementById("report-card").classList.remove("hidden");
-  document.getElementById("pitch-score").textContent = `${report.pitch_accuracy}%`;
-  document.getElementById("pronun-score").textContent = `${report.pronunciation_accuracy}%`;
+  setScoreTile("overall-score", report.overall_score);
+  setScoreTile("pitch-score", report.pitch_accuracy);
+  setScoreTile("pronun-score", report.pronunciation_accuracy);
+
+  const overallLabel = document.getElementById("overall-label");
+  overallLabel.textContent =
+    report.overall_score >= 85 ? "Excellent take!" :
+    report.overall_score >= 65 ? "Good — a bit more practice" :
+    "Keep practicing";
+  overallLabel.className = `text-sm font-medium mb-4 ${scoreColorClasses(report.overall_score).join(" ")}`;
 
   const grid = document.getElementById("note-grid");
   grid.innerHTML = "";
