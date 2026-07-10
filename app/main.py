@@ -45,12 +45,12 @@ def _list_songs() -> list:
 
 @app.get("/", response_class=HTMLResponse)
 async def role_picker(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html")
 
 
 @app.get("/teacher", response_class=HTMLResponse)
 async def teacher_dashboard(request: Request):
-    return templates.TemplateResponse("teacher.html", {"request": request, "songs": _list_songs()})
+    return templates.TemplateResponse(request, "teacher.html", {"songs": _list_songs()})
 
 
 @app.get("/student", response_class=HTMLResponse)
@@ -60,8 +60,9 @@ async def student_dashboard(request: Request, song: str | None = None):
         raise HTTPException(status_code=500, detail="No exercises configured on the server.")
     selected = song or songs[0]["id"]
     return templates.TemplateResponse(
+        request,
         "student.html",
-        {"request": request, "songs": songs, "selected_song_id": selected,
+        {"songs": songs, "selected_song_id": selected,
          "solfege_ready": solfege_dsp.is_ready()},
     )
 
