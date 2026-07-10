@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Student Session{% endblock %}
+
+{% block head %}
+<style>
+  #chroma-canvas, #waveform-canvas { width: 100%; display: block; }
+  .note-cell { transition: background-color .25s ease, transform .15s ease; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid lg:grid-cols-3 gap-6" id="app-root"
+     data-selected-song="{{ selected_song_id }}"
+     data-solfege-ready="{{ 'true' if solfege_ready else 'false' }}">
+
+  <div class="lg:col-span-2 space-y-6">
+    <div class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <label for="song-select" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Exercise</label>
+          <select id="song-select" class="block mt-1 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-sm font-medium focus:ring-brand-500 focus:border-brand-500">
+            {% for song in songs %}
+            <option value="{{ song.id }}" {% if song.id == selected_song_id %}selected{% endif %}>{{ song.title }} ({{ song.difficulty }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <span id="tempo-badge" class="pill bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"></span>
+      </div>
+      <div id="notation" class="overflow-x-auto rounded-xl bg-white dark:bg-slate-100 p-4"></div>
+    </div>
+
+    <div class="card p-6">
+      <h3 class="font-semibold mb-3 flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-brand-500"></span> Live Feedback
+      </h3>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">Waveform</p>
+          <canvas id="waveform-canvas" width="400" height="90" class="rounded-lg bg-slate-900"></canvas>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">Chromagram</p>
+          <canvas id="chroma-canvas" width="400" height="90" class="rounded-lg bg-slate-900"></canvas>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center gap-4">
+        <div class="text-3xl font-bold tabular-nums w-28" id="live-note">&mdash;</div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">
+          <div>Detected pitch: <span id="live-hz" class="font-medium text-slate-700 dark:text-slate-200">&mdash;</span> Hz</div>
+          <div>Nearest solfège target: <span id="live-target" class="font-medium text-slate-700 dark:text-slate-200">&mdash;</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <div class="card p-6 text-center">
+      <button id="record-btn" class="relative mx-auto h-20 w-20 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-lg hover:bg-brand-700 transition focus:outline-none focus:ring-4 focus:ring-brand-300 dark:focus:ring-brand-800">
+        <span id="record-pulse" class="hidden absolute inset-0 rounded-full bg-brand-500 animate-pulse-ring"></span>
+        <svg class="h-8 w-8 relative" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+      </button>
+      <p id="record-status" class="mt-4 text-sm font-medium text-slate-600 dark:text-slate-300">Tap to start recording</p>
+      <p id="mic-error" class="mt-2 text-xs text-rose-600 dark:text-rose-400 hidden"></p>
+
+      <button id="submit-btn" disabled
+        class="btn-primary w-full mt-5 disabled:opacity-40">
+        Submit for Grading
+      </button>
+      <audio id="playback" controls class="w-full mt-4 hidden"></audio>
+    </div>
+
+    <div id="report-card" class="card p-6 hidden">
+      <h3 class="font-semibold mb-4">Assessment Report</h3>
+      <div class="grid grid-cols-2 gap-4 text-center">
+        <div>
+          <div class="text-3xl font-bold text-brand-600 dark:text-brand-400" id="pitch-score">&mdash;</div>
+          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-1">Pitch Accuracy</div>
+        </div>
+        <div>
+          <div class="text-3xl font-bold text-brand-600 dark:text-brand-400" id="pronun-score">&mdash;</div>
+          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-1">Pronunciation</div>
+        </div>
+      </div>
+      <div class="mt-5">
+        <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Per-note breakdown</p>
+        <div id="note-grid" class="grid grid-cols-4 gap-1.5"></div>
+      </div>
+      <div class="mt-5">
+        <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Time-aligned error graph</p>
+        <canvas id="error-graph" width="400" height="140" class="rounded-lg bg-slate-900 w-full"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/vendor/abcjs/abcjs-basic-min.js"></script>
+<script src="/static/vendor/meyda/meyda.min.js"></script>
+<script src="/static/vendor/pitchfinder/pitchfinder.min.js"></script>
+<script src="/static/js/wav-encoder.js"></script>
+<script src="/static/js/notation.js"></script>
+<script src="/static/js/pitch-viz.js"></script>
+<script src="/static/js/recorder.js"></script>
+<script src="/static/js/results.js"></script>
+<script src="/static/js/app.js"></script>
+{% endblock %}

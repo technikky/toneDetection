@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Teacher Dashboard{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-bold">Teacher Dashboard</h1>
+    <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Select an exercise to send students into the sight-singing session.</p>
+  </div>
+  <span id="engine-status" class="pill bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">Checking engines&hellip;</span>
+</div>
+
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+  {% for song in songs %}
+  <div class="card p-6 flex flex-col justify-between">
+    <div>
+      <span class="pill bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">{{ song.difficulty }}</span>
+      <h2 class="text-lg font-semibold mt-3">{{ song.title }}</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Key of {{ song.key }} &middot; {{ song.tempo_bpm }} BPM &middot; {{ song.notes|length }} notes</p>
+    </div>
+    <div class="mt-6 flex gap-3">
+      <a href="/student?song={{ song.id }}" class="btn-primary flex-1">Open for Student</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card p-6 mt-8">
+  <h3 class="font-semibold mb-2">Recent submissions</h3>
+  <p class="text-sm text-slate-500 dark:text-slate-400">Raw takes are stored locally in <code class="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800">app/data/uploads/</code> for review or as future retraining data for the solfège classifier.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  fetch("/api/status").then(r => r.json()).then(s => {
+    const el = document.getElementById("engine-status");
+    if (s.solfege_classifier_ready) {
+      el.textContent = "Pitch + Solfège engines ready";
+      el.className = "pill bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300";
+    } else {
+      el.textContent = "Solfège classifier not trained yet";
+      el.className = "pill bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300";
+    }
+  }).catch(() => {});
+</script>
+{% endblock %}
