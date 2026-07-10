@@ -24,9 +24,15 @@
           {% endfor %}
         </select>
       </div>
+      <div>
+        <label class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 block">Import from MuseScore</label>
+        <button id="import-musicxml-btn" type="button" class="btn-secondary mt-1">Import MusicXML&hellip;</button>
+        <input id="import-musicxml-input" type="file" accept=".xml,.musicxml,.mxl" class="hidden" />
+      </div>
       <a href="/teacher" class="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline mb-2">&larr; Dashboard</a>
     </div>
   </div>
+  <p id="import-status" class="text-sm mb-6 hidden"></p>
 
   <div class="grid lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-6">

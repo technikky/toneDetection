@@ -8,6 +8,7 @@ import re
 import time
 import uuid
 from datetime import date as date_cls
+from pathlib import Path
 
 import numpy as np
 import soundfile as sf
@@ -21,6 +22,7 @@ from app import db
 from app.config import SONGS_DIR, STATIC_DIR, TEMPLATES_DIR, UPLOADS_DIR, SAMPLE_RATE
 from app.dsp import solfege as solfege_dsp
 from app.dsp.grading import grade_submission
+from app.musicxml_import import MusicXmlImportError, parse_musicxml
 from app.schemas import AssessmentReport, SongDetail, SongPayload, SongSummary, SubmissionRecord
 
 logging.basicConfig(level=logging.INFO)
@@ -151,6 +153,19 @@ async def api_update_song(song_id: str, payload: SongPayload):
     _load_song(song_id)  # 404s if it doesn't already exist
     song = _save_song(song_id, payload)
     return SongDetail(**song)
+
+
+@app.post("/api/songs/import-musicxml", response_model=SongPayload)
+async def api_import_musicxml(file: UploadFile = File(...)):
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Empty file upload.")
+    fallback_title = Path(file.filename).stem if file.filename else "Imported Exercise"
+    try:
+        parsed = parse_musicxml(raw, fallback_title=fallback_title)
+    except MusicXmlImportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return SongPayload(**parsed)
 
 
 @app.get("/api/status")
