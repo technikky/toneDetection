@@ -20,6 +20,11 @@
   const addNoteBtn = document.getElementById("add-note");
   const saveBtn = document.getElementById("save-btn");
   const saveStatus = document.getElementById("save-status");
+  const playBtn = document.getElementById("play-btn");
+  const pianoPlayer = createPianoPlayer(playBtn);
+  let currentTuneObj = null;
+
+  playBtn.addEventListener("click", () => pianoPlayer.play(currentTuneObj));
 
   function midiToNoteName(midi) {
     if (!Number.isFinite(midi)) return "";
@@ -81,21 +86,24 @@
     previewTimer = setTimeout(() => {
       abcError.classList.add("hidden");
       try {
-        renderNotation(abcTextarea.value, "notation-preview");
+        const tunes = renderNotation(abcTextarea.value, "notation-preview");
+        currentTuneObj = tunes && tunes[0];
         if (!document.querySelector("#notation-preview svg")) {
           abcError.textContent = "This ABC notation didn't produce any sheet music -- check the syntax.";
           abcError.classList.remove("hidden");
+          currentTuneObj = null;
         }
       } catch (err) {
         abcError.textContent = "Could not render this ABC notation: " + err.message;
         abcError.classList.remove("hidden");
+        currentTuneObj = null;
       }
+      pianoPlayer.stop();
     }, 300);
   }
   abcTextarea.addEventListener("input", schedulePreview);
 
-  function loadForm(song) {
-    heading.textContent = song ? `Edit: ${song.title}` : "New Exercise";
+  function populateFields(song) {
     titleInput.value = song ? song.title : "";
     difficultySelect.value = song ? song.difficulty : "Beginner";
     keyInput.value = song ? song.key : "C";
@@ -106,6 +114,44 @@
     notes.forEach(addNote);
     schedulePreview();
   }
+
+  function loadForm(song) {
+    heading.textContent = song ? `Edit: ${song.title}` : "New Exercise";
+    populateFields(song);
+  }
+
+  const importBtn = document.getElementById("import-musicxml-btn");
+  const importInput = document.getElementById("import-musicxml-input");
+  const importStatus = document.getElementById("import-status");
+
+  importBtn.addEventListener("click", () => importInput.click());
+
+  importInput.addEventListener("change", async () => {
+    const file = importInput.files[0];
+    if (!file) return;
+    importStatus.className = "text-sm mb-6 text-slate-500 dark:text-slate-400";
+    importStatus.textContent = `Importing ${file.name}…`;
+    importStatus.classList.remove("hidden");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/songs/import-musicxml", { method: "POST", body: form });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail));
+      }
+      const parsed = await res.json();
+      populateFields(parsed);
+      heading.textContent = existingSong ? `Edit: ${existingSong.title}` : "New Exercise";
+      importStatus.className = "text-sm mb-6 text-emerald-600 dark:text-emerald-400";
+      importStatus.textContent = `Imported "${parsed.title}" -- review the notes/ABC below, then Save.`;
+    } catch (err) {
+      importStatus.className = "text-sm mb-6 text-rose-600 dark:text-rose-400";
+      importStatus.textContent = "Could not import: " + err.message;
+    } finally {
+      importInput.value = "";
+    }
+  });
 
   loadSelect.addEventListener("change", () => {
     window.location.href = loadSelect.value

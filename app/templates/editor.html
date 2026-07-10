@@ -24,9 +24,15 @@
           {% endfor %}
         </select>
       </div>
+      <div>
+        <label class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 block">Import from MuseScore</label>
+        <button id="import-musicxml-btn" type="button" class="btn-secondary mt-1">Import MusicXML&hellip;</button>
+        <input id="import-musicxml-input" type="file" accept=".xml,.musicxml,.mxl" class="hidden" />
+      </div>
       <a href="/teacher" class="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline mb-2">&larr; Dashboard</a>
     </div>
   </div>
+  <p id="import-status" class="text-sm mb-6 hidden"></p>
 
   <div class="grid lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-6">
@@ -63,6 +69,7 @@
           class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 font-mono text-sm p-3 focus:ring-brand-500 focus:border-brand-500"></textarea>
         <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-4 mb-2">Live preview</p>
         <div id="notation-preview" class="overflow-x-auto rounded-xl bg-white dark:bg-slate-100 p-4 text-slate-900"></div>
+        <button id="play-btn" type="button" class="btn-secondary mt-3">▶ Play</button>
         <p id="abc-error" class="text-xs text-rose-600 dark:text-rose-400 mt-2 hidden"></p>
       </div>
     </div>
@@ -104,5 +111,6 @@
 {% block scripts %}
 <script src="/static/vendor/abcjs/abcjs-basic-min.js"></script>
 <script src="/static/js/notation.js"></script>
+<script src="/static/js/piano-synth.js"></script>
 <script src="/static/js/editor.js"></script>
 {% endblock %}

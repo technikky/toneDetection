@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Live Session{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-bold">Live Session</h1>
+    <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Pick an exercise, send it to the class, and watch students practice in real time.</p>
+  </div>
+  <a href="/teacher" class="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline">&larr; Back to dashboard</a>
+</div>
+
+<div id="monitor-root" class="grid lg:grid-cols-3 gap-6" data-selected-song="{{ selected_song_id or '' }}">
+  <div class="card p-6">
+    <h3 class="font-semibold mb-4">Send an exercise</h3>
+    <label for="song-select" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Exercise</label>
+    <select id="song-select" class="input mt-1">
+      {% for song in songs %}
+      <option value="{{ song.id }}" {% if song.id == selected_song_id %}selected{% endif %}>{{ song.title }} ({{ song.difficulty }})</option>
+      {% endfor %}
+    </select>
+    <a id="edit-link" href="/teacher/editor" class="block mt-3 text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline">Edit this exercise</a>
+    <button id="send-btn" class="btn-primary w-full mt-5">Send to Class</button>
+    <p id="send-status" class="text-sm mt-3 hidden"></p>
+  </div>
+
+  <div class="card p-6 lg:col-span-2">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold">Live roster</h3>
+      <span id="roster-count" class="pill bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">0 connected</span>
+    </div>
+    <div id="roster" class="space-y-3">
+      <p class="text-sm text-slate-500 dark:text-slate-400">No students connected yet. Have them open the Student page.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/live-client.js"></script>
+<script src="/static/js/monitor.js"></script>
+{% endblock %}
