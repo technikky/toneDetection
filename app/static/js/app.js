@@ -18,6 +18,9 @@
   const tempoBadge = document.getElementById("tempo-badge");
   const studentNameInput = document.getElementById("student-name");
   const studentNameError = document.getElementById("student-name-error");
+  const playBtn = document.getElementById("play-btn");
+  const pianoPlayer = createPianoPlayer(playBtn);
+  let currentTuneObj = null;
 
   studentNameInput.value = localStorage.getItem("studentName") || "";
   studentNameInput.addEventListener("input", () => {
@@ -25,17 +28,21 @@
     if (studentNameInput.value.trim()) studentNameError.classList.add("hidden");
   });
 
+  playBtn.addEventListener("click", () => pianoPlayer.play(currentTuneObj));
+
   async function loadSong(songId) {
     const res = await fetch(`/api/songs/${songId}`);
     if (!res.ok) return;
     const song = await res.json();
     window.activeSongNotes = song.notes.map((n) => ({ midi: n.midi, solfege: n.solfege }));
     window.activeSong = song;
-    renderNotation(song.abc);
+    const tunes = renderNotation(song.abc);
+    currentTuneObj = tunes && tunes[0];
     tempoBadge.textContent = `${song.tempo_bpm} BPM · Key of ${song.key}`;
     document.getElementById("report-card").classList.add("hidden");
     submitBtn.disabled = true;
     playback.classList.add("hidden");
+    pianoPlayer.stop();
   }
 
   songSelect.addEventListener("change", () => {
