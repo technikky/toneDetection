@@ -1,0 +1,17 @@
+{
+  "id": "skip-and-step-challenge",
+  "title": "Skip and Step Challenge",
+  "difficulty": "Intermediate",
+  "key": "C",
+  "tempo_bpm": 100,
+  "abc": "X:1\nT:Skip and Step Challenge\nM:4/4\nL:1/4\nQ:1/4=100\nK:C\nC E G E | F D C2 |]",
+  "notes": [
+    {"step": 1, "midi": 60, "solfege": "Do",  "start": 0.0, "duration": 0.6},
+    {"step": 2, "midi": 64, "solfege": "Mi",  "start": 0.6, "duration": 0.6},
+    {"step": 3, "midi": 67, "solfege": "Sol", "start": 1.2, "duration": 0.6},
+    {"step": 4, "midi": 64, "solfege": "Mi",  "start": 1.8, "duration": 0.6},
+    {"step": 5, "midi": 65, "solfege": "Fa",  "start": 2.4, "duration": 0.6},
+    {"step": 6, "midi": 62, "solfege": "Re",  "start": 3.0, "duration": 0.6},
+    {"step": 7, "midi": 60, "solfege": "Do",  "start": 3.6, "duration": 1.2}
+  ]
+}

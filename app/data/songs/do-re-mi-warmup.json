@@ -1,0 +1,18 @@
+{
+  "id": "do-re-mi-warmup",
+  "title": "Do Re Mi Warmup",
+  "difficulty": "Beginner",
+  "key": "C",
+  "tempo_bpm": 80,
+  "abc": "X:1\nT:Do Re Mi Warmup\nM:4/4\nL:1/4\nQ:1/4=80\nK:C\nC D E F | G A B c |]",
+  "notes": [
+    {"step": 1, "midi": 60, "solfege": "Do",  "start": 0.00, "duration": 0.75},
+    {"step": 2, "midi": 62, "solfege": "Re",  "start": 0.75, "duration": 0.75},
+    {"step": 3, "midi": 64, "solfege": "Mi",  "start": 1.50, "duration": 0.75},
+    {"step": 4, "midi": 65, "solfege": "Fa",  "start": 2.25, "duration": 0.75},
+    {"step": 5, "midi": 67, "solfege": "Sol", "start": 3.00, "duration": 0.75},
+    {"step": 6, "midi": 69, "solfege": "La",  "start": 3.75, "duration": 0.75},
+    {"step": 7, "midi": 71, "solfege": "Ti",  "start": 4.50, "duration": 0.75},
+    {"step": 8, "midi": 72, "solfege": "Do",  "start": 5.25, "duration": 0.75}
+  ]
+}

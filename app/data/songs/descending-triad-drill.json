@@ -1,0 +1,16 @@
+{
+  "id": "descending-triad-drill",
+  "title": "Descending Triad Drill",
+  "difficulty": "Beginner",
+  "key": "C",
+  "tempo_bpm": 90,
+  "abc": "X:1\nT:Descending Triad Drill\nM:4/4\nL:1/4\nQ:1/4=90\nK:C\nG E C G | E C2 z |]",
+  "notes": [
+    {"step": 1, "midi": 67, "solfege": "Sol", "start": 0.000, "duration": 0.667},
+    {"step": 2, "midi": 64, "solfege": "Mi",  "start": 0.667, "duration": 0.667},
+    {"step": 3, "midi": 60, "solfege": "Do",  "start": 1.334, "duration": 0.667},
+    {"step": 4, "midi": 67, "solfege": "Sol", "start": 2.001, "duration": 0.667},
+    {"step": 5, "midi": 64, "solfege": "Mi",  "start": 2.668, "duration": 0.667},
+    {"step": 6, "midi": 60, "solfege": "Do",  "start": 3.335, "duration": 1.334}
+  ]
+}
