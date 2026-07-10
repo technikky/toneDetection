@@ -24,6 +24,16 @@ class SongDetail(SongSummary):
     notes: List[TargetNote]
 
 
+class SongPayload(BaseModel):
+    """Body for creating/updating an exercise (Stage 12 sheet-music editor)."""
+    title: str
+    difficulty: str
+    key: str
+    tempo_bpm: int
+    abc: str
+    notes: List[TargetNote]
+
+
 class NoteResult(BaseModel):
     step: int
     start: float
@@ -45,3 +55,15 @@ class AssessmentReport(BaseModel):
     overall_score: float
     notes: List[NoteResult]
     pitch_contour: List[List[float]]  # [[time, midi], ...] sparse, for the error graph
+
+
+class SubmissionRecord(BaseModel):
+    """One row of the Stage 12 teacher submissions history."""
+    id: int
+    student_name: str
+    song_id: str
+    song_title: str
+    submitted_at: str
+    pitch_accuracy: float
+    pronunciation_accuracy: float
+    overall_score: float

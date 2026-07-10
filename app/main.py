@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
+from app import db
 from app.config import SONGS_DIR, STATIC_DIR, TEMPLATES_DIR, UPLOADS_DIR, SAMPLE_RATE
 from app.dsp import solfege as solfege_dsp
 from app.dsp.grading import grade_submission
@@ -27,6 +28,8 @@ app = FastAPI(title="Offline Sight-Singing & Solfège Assessment Tool")
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+db.init_db()
 
 
 def _load_song(song_id: str) -> dict:
@@ -87,7 +90,15 @@ async def api_status():
 
 
 @app.post("/api/submit", response_model=AssessmentReport)
-async def submit_recording(song_id: str = Form(...), file: UploadFile = File(...)):
+async def submit_recording(
+    song_id: str = Form(...),
+    student_name: str = Form(...),
+    file: UploadFile = File(...),
+):
+    student_name = student_name.strip()
+    if not student_name:
+        raise HTTPException(status_code=400, detail="student_name is required.")
+
     song = _load_song(song_id)
     raw_bytes = await file.read()
     if not raw_bytes:
@@ -109,6 +120,13 @@ async def submit_recording(song_id: str = Form(...), file: UploadFile = File(...
     target_notes = [TargetNote(**n) for n in song["notes"]]
 
     report = grade_submission(np.asarray(audio, dtype=np.float32), sr, target_notes)
+    db.record_submission(
+        student_name=student_name,
+        song_id=song_id,
+        song_title=song["title"],
+        report=report,
+        take_filename=take_id,
+    )
     return AssessmentReport(song_id=song_id, **report)
 
 

@@ -10,6 +10,9 @@ TRAINING_DIR = BASE_DIR / "data" / "training"
 MODELS_DIR = BASE_DIR / "models"
 SOLFEGE_MODEL_PATH = MODELS_DIR / "solfege_classifier.joblib"
 
+# Stage 12: local record-keeping (students + graded submissions).
+DB_PATH = BASE_DIR / "data" / "sightsinging.db"
+
 for _d in (UPLOADS_DIR, TRAINING_DIR, MODELS_DIR, SONGS_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 

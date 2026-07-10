@@ -16,6 +16,14 @@
   const playback = document.getElementById("playback");
   const songSelect = document.getElementById("song-select");
   const tempoBadge = document.getElementById("tempo-badge");
+  const studentNameInput = document.getElementById("student-name");
+  const studentNameError = document.getElementById("student-name-error");
+
+  studentNameInput.value = localStorage.getItem("studentName") || "";
+  studentNameInput.addEventListener("input", () => {
+    localStorage.setItem("studentName", studentNameInput.value.trim());
+    if (studentNameInput.value.trim()) studentNameError.classList.add("hidden");
+  });
 
   async function loadSong(songId) {
     const res = await fetch(`/api/songs/${songId}`);
@@ -37,6 +45,11 @@
   recordBtn.addEventListener("click", async () => {
     micError.classList.add("hidden");
     if (!isRecording) {
+      if (!studentNameInput.value.trim()) {
+        studentNameError.classList.remove("hidden");
+        studentNameInput.focus();
+        return;
+      }
       try {
         currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch (err) {
@@ -71,6 +84,7 @@
     try {
       const form = new FormData();
       form.append("song_id", currentSongId);
+      form.append("student_name", studentNameInput.value.trim());
       form.append("file", lastBlob, "take.wav");
       const res = await fetch("/api/submit", { method: "POST", body: form });
       if (!res.ok) {

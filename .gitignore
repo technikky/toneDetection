@@ -10,6 +10,7 @@ tools/
 node_modules/
 .pytest_cache/
 app/data/uploads/
+*.db
 *.wav
 !app/data/samples/*.wav
 .DS_Store
