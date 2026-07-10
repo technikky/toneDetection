@@ -1,0 +1,66 @@
+{
+  "id": "starter-pentachord-1-scale",
+  "title": "Lower Pentachord: Steps",
+  "difficulty": "Intermediate",
+  "key": "C",
+  "tempo_bpm": 88,
+  "abc": "X:1\nT:Lower Pentachord: Steps\nM:4/4\nL:1/4\nQ:1/4=88\nK:C\nC D E F | G F E C2 |]",
+  "notes": [
+    {
+      "step": 1,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 0.0,
+      "duration": 0.682
+    },
+    {
+      "step": 2,
+      "midi": 62,
+      "solfege": "Re",
+      "start": 0.682,
+      "duration": 0.682
+    },
+    {
+      "step": 3,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 1.364,
+      "duration": 0.682
+    },
+    {
+      "step": 4,
+      "midi": 65,
+      "solfege": "Fa",
+      "start": 2.045,
+      "duration": 0.682
+    },
+    {
+      "step": 5,
+      "midi": 67,
+      "solfege": "Sol",
+      "start": 2.727,
+      "duration": 0.682
+    },
+    {
+      "step": 6,
+      "midi": 65,
+      "solfege": "Fa",
+      "start": 3.409,
+      "duration": 0.682
+    },
+    {
+      "step": 7,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 4.091,
+      "duration": 0.682
+    },
+    {
+      "step": 8,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 4.773,
+      "duration": 1.364
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "starter-solmila-2-skip",
+  "title": "Sol-Mi-La: Skipping",
+  "difficulty": "Beginner",
+  "key": "C",
+  "tempo_bpm": 88,
+  "abc": "X:1\nT:Sol-Mi-La: Skipping\nM:4/4\nL:1/4\nQ:1/4=88\nK:C\nA G E G | A E2 |]",
+  "notes": [
+    {
+      "step": 1,
+      "midi": 69,
+      "solfege": "La",
+      "start": 0.0,
+      "duration": 0.682
+    },
+    {
+      "step": 2,
+      "midi": 67,
+      "solfege": "Sol",
+      "start": 0.682,
+      "duration": 0.682
+    },
+    {
+      "step": 3,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 1.364,
+      "duration": 0.682
+    },
+    {
+      "step": 4,
+      "midi": 67,
+      "solfege": "Sol",
+      "start": 2.045,
+      "duration": 0.682
+    },
+    {
+      "step": 5,
+      "midi": 69,
+      "solfege": "La",
+      "start": 2.727,
+      "duration": 0.682
+    },
+    {
+      "step": 6,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 3.409,
+      "duration": 1.364
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "id": "starter-solmi-3-titi",
+  "title": "Sol-Mi: with Ti-ti",
+  "difficulty": "Beginner",
+  "key": "C",
+  "tempo_bpm": 88,
+  "abc": "X:1\nT:Sol-Mi: with Ti-ti\nM:4/4\nL:1/4\nQ:1/4=88\nK:C\nG/2 G/2 E G/2 | G/2 E G E |]",
+  "notes": [
+    {
+      "step": 1,
+      "midi": 67,
+      "solfege": "Sol",
+      "start": 0.0,
+      "duration": 0.341
+    },
+    {
+      "step": 2,
+      "midi": 67,
+      "solfege": "Sol",
+      "start": 0.341,
+      "duration": 0.341
+    },
+    {
+      "step": 3,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 0.682,
+      "duration": 0.682
+    },
+    {
+      "step": 4,
+      "midi": 67,
+      "solfege": "Sol",
+      "start": 1.364,
+      "duration": 0.341
+    },
+    {
+      "step": 5,
+      "midi": 67,
+      "solfege": "Sol",
+      "start": 1.705,
+      "duration": 0.341
+    },
+    {
+      "step": 6,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 2.045,
+      "duration": 0.682
+    },
+    {
+      "step": 7,
+      "midi": 67,
+      "solfege": "Sol",
+      "start": 2.727,
+      "duration": 0.682
+    },
+    {
+      "step": 8,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 3.409,
+      "duration": 0.682
+    }
+  ]
+}
