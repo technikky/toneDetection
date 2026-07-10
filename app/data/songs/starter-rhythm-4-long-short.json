@@ -1,0 +1,52 @@
+{
+  "id": "starter-rhythm-4-long-short",
+  "title": "Rhythm Drill: Long and Short",
+  "difficulty": "Beginner",
+  "key": "C",
+  "tempo_bpm": 88,
+  "abc": "X:1\nT:Rhythm Drill: Long and Short\nM:4/4\nL:1/4\nQ:1/4=88\nK:C\nC2 C C/2 C/2 | C2 C2 |]",
+  "notes": [
+    {
+      "step": 1,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 0.0,
+      "duration": 1.364
+    },
+    {
+      "step": 2,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 1.364,
+      "duration": 0.682
+    },
+    {
+      "step": 3,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 2.045,
+      "duration": 0.341
+    },
+    {
+      "step": 4,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 2.386,
+      "duration": 0.341
+    },
+    {
+      "step": 5,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 2.727,
+      "duration": 1.364
+    },
+    {
+      "step": 6,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 4.091,
+      "duration": 1.364
+    }
+  ]
+}

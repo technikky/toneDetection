@@ -1,19 +1,32 @@
-"""Stage 12: local SQLite record-keeping for students and graded takes.
+"""Stage 12/15: local SQLite record-keeping for teachers, the student
+roster, and graded takes.
 
 Kept deliberately simple (stdlib sqlite3, one connection per call) since
 this is a single-teacher, single-machine, low-concurrency offline tool.
 """
 import json
+import secrets
 import sqlite3
 from datetime import datetime
 from typing import Optional
 
+from app import roster_crypto
 from app.config import DB_PATH
 
 _SCHEMA = """
+CREATE TABLE IF NOT EXISTS teachers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS students (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    access_code TEXT NOT NULL UNIQUE,
+    name_encrypted BLOB NOT NULL,
+    consent_on_file INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL
 );
 
@@ -33,6 +46,11 @@ CREATE TABLE IF NOT EXISTS submissions (
 CREATE INDEX IF NOT EXISTS idx_submissions_submitted_at ON submissions(submitted_at);
 """
 
+# Excludes visually-ambiguous characters (0/O, 1/I/L) since students read
+# these off a card or the board.
+_ACCESS_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+_ACCESS_CODE_LENGTH = 6
+
 
 def _connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
@@ -47,27 +65,101 @@ def init_db() -> None:
         conn.executescript(_SCHEMA)
 
 
-def get_or_create_student(name: str) -> int:
-    name = name.strip()
+# -- teachers --------------------------------------------------------------
+
+def count_teachers() -> int:
     with _connect() as conn:
-        row = conn.execute("SELECT id FROM students WHERE name = ? COLLATE NOCASE", (name,)).fetchone()
-        if row:
-            return row["id"]
+        return conn.execute("SELECT COUNT(*) AS n FROM teachers").fetchone()["n"]
+
+
+def create_teacher(username: str, password_hash: str) -> int:
+    with _connect() as conn:
         cur = conn.execute(
-            "INSERT INTO students (name, created_at) VALUES (?, ?)",
-            (name, datetime.now().isoformat(timespec="seconds")),
+            "INSERT INTO teachers (username, password_hash, created_at) VALUES (?, ?, ?)",
+            (username.strip(), password_hash, datetime.now().isoformat(timespec="seconds")),
         )
         return cur.lastrowid
 
 
+def get_teacher_by_username(username: str) -> Optional[dict]:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT id, username, password_hash FROM teachers WHERE username = ? COLLATE NOCASE",
+            (username.strip(),),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+# -- roster ------------------------------------------------------------
+
+def _generate_access_code(conn: sqlite3.Connection) -> str:
+    for _ in range(20):
+        code = "".join(secrets.choice(_ACCESS_CODE_ALPHABET) for _ in range(_ACCESS_CODE_LENGTH))
+        exists = conn.execute("SELECT 1 FROM students WHERE access_code = ?", (code,)).fetchone()
+        if not exists:
+            return code
+    raise RuntimeError("Could not generate a unique access code after 20 attempts.")
+
+
+def add_student(name: str, consent_on_file: bool) -> dict:
+    name = name.strip()
+    with _connect() as conn:
+        code = _generate_access_code(conn)
+        created_at = datetime.now().isoformat(timespec="seconds")
+        cur = conn.execute(
+            """INSERT INTO students (access_code, name_encrypted, consent_on_file, active, created_at)
+               VALUES (?, ?, ?, 1, ?)""",
+            (code, roster_crypto.encrypt_name(name), int(consent_on_file), created_at),
+        )
+        return {"id": cur.lastrowid, "access_code": code, "name": name,
+                "consent_on_file": consent_on_file, "active": True, "created_at": created_at}
+
+
+def list_roster() -> list:
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT id, access_code, name_encrypted, consent_on_file, active, created_at "
+            "FROM students ORDER BY created_at"
+        ).fetchall()
+    return [
+        {
+            "id": r["id"],
+            "access_code": r["access_code"],
+            "name": roster_crypto.decrypt_name(r["name_encrypted"]),
+            "consent_on_file": bool(r["consent_on_file"]),
+            "active": bool(r["active"]),
+            "created_at": r["created_at"],
+        }
+        for r in rows
+    ]
+
+
+def get_student_by_code(access_code: str) -> Optional[dict]:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT id, access_code, name_encrypted, active FROM students WHERE access_code = ?",
+            (access_code.strip().upper(),),
+        ).fetchone()
+    if not row or not row["active"]:
+        return None
+    return {"id": row["id"], "access_code": row["access_code"], "name": roster_crypto.decrypt_name(row["name_encrypted"])}
+
+
+def set_student_active(student_id: int, active: bool) -> bool:
+    with _connect() as conn:
+        cur = conn.execute("UPDATE students SET active = ? WHERE id = ?", (int(active), student_id))
+        return cur.rowcount > 0
+
+
+# -- submissions -------------------------------------------------------
+
 def record_submission(
-    student_name: str,
+    student_id: int,
     song_id: str,
     song_title: str,
     report: dict,
     take_filename: str,
 ) -> int:
-    student_id = get_or_create_student(student_name)
     notes = [n.model_dump() if hasattr(n, "model_dump") else n for n in report["notes"]]
     with _connect() as conn:
         cur = conn.execute(
@@ -91,9 +183,11 @@ def record_submission(
 
 
 def list_submissions(date: Optional[str] = None, student_name: Optional[str] = None) -> list:
-    """List submissions, newest first. `date` filters to a 'YYYY-MM-DD' local day."""
+    """List submissions, newest first. `date` filters to a 'YYYY-MM-DD' local
+    day. Names are encrypted at rest, so the optional name filter is applied
+    in Python after decrypting -- fine at classroom scale."""
     query = """
-        SELECT s.id, st.name AS student_name, s.song_id, s.song_title, s.submitted_at,
+        SELECT s.id, st.name_encrypted, s.song_id, s.song_title, s.submitted_at,
                s.pitch_accuracy, s.pronunciation_accuracy, s.overall_score
         FROM submissions s JOIN students st ON st.id = s.student_id
         WHERE 1=1
@@ -102,18 +196,34 @@ def list_submissions(date: Optional[str] = None, student_name: Optional[str] = N
     if date:
         query += " AND substr(s.submitted_at, 1, 10) = ?"
         params.append(date)
-    if student_name:
-        query += " AND st.name LIKE ? ESCAPE '\\' COLLATE NOCASE"
-        escaped = student_name.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-        params.append(f"%{escaped}%")
     query += " ORDER BY s.submitted_at DESC"
 
     with _connect() as conn:
         rows = conn.execute(query, params).fetchall()
-        return [dict(r) for r in rows]
+
+    results = []
+    needle = student_name.strip().lower() if student_name else None
+    for r in rows:
+        name = roster_crypto.decrypt_name(r["name_encrypted"])
+        if needle and needle not in name.lower():
+            continue
+        row = dict(r)
+        row.pop("name_encrypted")
+        row["student_name"] = name
+        results.append(row)
+    return results
 
 
-def list_students() -> list:
+def list_submissions_for_code(access_code: str) -> list:
+    """A student's own past attempts, looked up by their own access code."""
+    student = get_student_by_code(access_code)
+    if not student:
+        return []
     with _connect() as conn:
-        rows = conn.execute("SELECT name FROM students ORDER BY name COLLATE NOCASE").fetchall()
-        return [r["name"] for r in rows]
+        rows = conn.execute(
+            """SELECT id, song_id, song_title, submitted_at, pitch_accuracy,
+                      pronunciation_accuracy, overall_score
+               FROM submissions WHERE student_id = ? ORDER BY submitted_at DESC""",
+            (student["id"],),
+        ).fetchall()
+    return [dict(r) for r in rows]

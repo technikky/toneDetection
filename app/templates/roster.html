@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Student Roster{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-bold">Student Roster</h1>
+    <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Add students here to generate their access codes -- students never type their own name.</p>
+  </div>
+  <a href="/teacher" class="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline">&larr; Back to dashboard</a>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-6">
+  <div class="card p-6">
+    <h3 class="font-semibold mb-4">Add a student</h3>
+    <div class="space-y-4">
+      <div>
+        <label for="f-name" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Student name</label>
+        <input id="f-name" type="text" maxlength="80" class="input mt-1" placeholder="Full name" />
+      </div>
+      <label class="flex items-start gap-2 text-sm">
+        <input id="f-consent" type="checkbox" class="mt-0.5" />
+        <span>Signed parent/guardian consent form is on file for this student.</span>
+      </label>
+      <button id="add-btn" class="btn-primary w-full">Add Student &amp; Generate Code</button>
+      <p id="add-status" class="text-sm hidden"></p>
+    </div>
+  </div>
+
+  <div class="card p-6 lg:col-span-2">
+    <h3 class="font-semibold mb-4">Roster</h3>
+    <div id="roster-table" class="overflow-x-auto"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/roster.js"></script>
+{% endblock %}

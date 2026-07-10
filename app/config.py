@@ -25,7 +25,10 @@ TRAINING_DIR = BASE_DIR / "data" / "training"
 # to the .exe alongside UPLOADS_DIR, not in the read-only bundle.
 DB_PATH = WRITABLE_DIR / "sightsinging.db"
 
-for _d in (UPLOADS_DIR, MODELS_DIR, SONGS_DIR):
+# Stage 15: rotating local crash/error logs -- see app/logging_config.py.
+LOGS_DIR = WRITABLE_DIR / "logs"
+
+for _d in (UPLOADS_DIR, MODELS_DIR, SONGS_DIR, LOGS_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 # The seven movable-do solfège syllables this system recognizes.

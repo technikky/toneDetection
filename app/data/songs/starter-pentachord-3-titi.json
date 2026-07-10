@@ -1,0 +1,66 @@
+{
+  "id": "starter-pentachord-3-titi",
+  "title": "Lower Pentachord: with Ti-ti",
+  "difficulty": "Intermediate",
+  "key": "C",
+  "tempo_bpm": 88,
+  "abc": "X:1\nT:Lower Pentachord: with Ti-ti\nM:4/4\nL:1/4\nQ:1/4=88\nK:C\nC/2 D/2 E/2 F/2 | G F E C2 |]",
+  "notes": [
+    {
+      "step": 1,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 0.0,
+      "duration": 0.341
+    },
+    {
+      "step": 2,
+      "midi": 62,
+      "solfege": "Re",
+      "start": 0.341,
+      "duration": 0.341
+    },
+    {
+      "step": 3,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 0.682,
+      "duration": 0.341
+    },
+    {
+      "step": 4,
+      "midi": 65,
+      "solfege": "Fa",
+      "start": 1.023,
+      "duration": 0.341
+    },
+    {
+      "step": 5,
+      "midi": 67,
+      "solfege": "Sol",
+      "start": 1.364,
+      "duration": 0.682
+    },
+    {
+      "step": 6,
+      "midi": 65,
+      "solfege": "Fa",
+      "start": 2.045,
+      "duration": 0.682
+    },
+    {
+      "step": 7,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 2.727,
+      "duration": 0.682
+    },
+    {
+      "step": 8,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 3.409,
+      "duration": 1.364
+    }
+  ]
+}

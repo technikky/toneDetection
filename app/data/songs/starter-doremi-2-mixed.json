@@ -1,0 +1,59 @@
+{
+  "id": "starter-doremi-2-mixed",
+  "title": "Do-Re-Mi: Mixed Steps",
+  "difficulty": "Beginner",
+  "key": "C",
+  "tempo_bpm": 88,
+  "abc": "X:1\nT:Do-Re-Mi: Mixed Steps\nM:4/4\nL:1/4\nQ:1/4=88\nK:C\nE D C D | E E D2 |]",
+  "notes": [
+    {
+      "step": 1,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 0.0,
+      "duration": 0.682
+    },
+    {
+      "step": 2,
+      "midi": 62,
+      "solfege": "Re",
+      "start": 0.682,
+      "duration": 0.682
+    },
+    {
+      "step": 3,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 1.364,
+      "duration": 0.682
+    },
+    {
+      "step": 4,
+      "midi": 62,
+      "solfege": "Re",
+      "start": 2.045,
+      "duration": 0.682
+    },
+    {
+      "step": 5,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 2.727,
+      "duration": 0.682
+    },
+    {
+      "step": 6,
+      "midi": 64,
+      "solfege": "Mi",
+      "start": 3.409,
+      "duration": 0.682
+    },
+    {
+      "step": 7,
+      "midi": 62,
+      "solfege": "Re",
+      "start": 4.091,
+      "duration": 1.364
+    }
+  ]
+}

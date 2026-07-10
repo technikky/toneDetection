@@ -8,6 +8,10 @@
   </div>
   <div class="flex items-center gap-3">
     <span id="engine-status" class="pill bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">Checking engines&hellip;</span>
+    <a href="/teacher/license" class="pill {{ 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' if license_info else 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' }} hover:opacity-80">
+      {{ "Licensed" if license_info else "Beta / Unlicensed" }}
+    </a>
+    <a href="/teacher/roster" class="btn-secondary">Roster</a>
     <a href="/teacher/editor" class="btn-primary">+ New Exercise</a>
   </div>
 </div>

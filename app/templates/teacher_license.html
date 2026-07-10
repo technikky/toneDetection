@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}License{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-bold">License</h1>
+    <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">This build runs fully featured without a license during the beta -- entering a key here just records who it's licensed to.</p>
+  </div>
+  <a href="/teacher" class="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline">&larr; Back to dashboard</a>
+</div>
+
+<div class="max-w-lg card p-6">
+  {% if license_info %}
+  <div class="pill bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 mb-4">Licensed</div>
+  <dl class="space-y-2 text-sm mb-6">
+    <div class="flex justify-between"><dt class="text-slate-500 dark:text-slate-400">School</dt><dd class="font-medium">{{ license_info.school }}</dd></div>
+    <div class="flex justify-between"><dt class="text-slate-500 dark:text-slate-400">Seats</dt><dd class="font-medium">{{ license_info.seats }}</dd></div>
+    <div class="flex justify-between"><dt class="text-slate-500 dark:text-slate-400">Issued</dt><dd class="font-medium">{{ license_info.issued }}</dd></div>
+    <div class="flex justify-between"><dt class="text-slate-500 dark:text-slate-400">Expires</dt><dd class="font-medium">{{ license_info.expires or "Never" }}</dd></div>
+  </dl>
+  {% else %}
+  <div class="pill bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 mb-4">Beta / Unlicensed</div>
+  {% endif %}
+
+  {% if error %}
+  <p class="text-sm text-rose-600 dark:text-rose-400 mb-4">{{ error }}</p>
+  {% endif %}
+  {% if saved %}
+  <p class="text-sm text-emerald-600 dark:text-emerald-400 mb-4">License saved.</p>
+  {% endif %}
+
+  <form method="post" action="/teacher/license" class="space-y-4">
+    <div>
+      <label for="license_key" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">License key</label>
+      <input id="license_key" name="license_key" type="text" class="input mt-1 font-mono text-xs" placeholder="SSING-..." />
+    </div>
+    <button type="submit" class="btn-primary w-full">Save License Key</button>
+  </form>
+</div>
+{% endblock %}

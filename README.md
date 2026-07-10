@@ -100,3 +100,15 @@ run_app.py / sight_singing.spec   PyInstaller entry point and build spec
 The app is designed to run exclusively on `http://127.0.0.1` -- this is what allows browsers to
 grant microphone access without HTTPS while keeping everything air-gapped. It is not intended to
 be exposed on a network.
+
+Teacher access is protected by a local login (first run walks you through creating an account).
+Students authenticate with a teacher-issued access code instead of a free-text name; the roster
+is teacher-managed at `/teacher/roster`, and real names are encrypted at rest.
+
+## Privacy & compliance
+
+Since this app records children's voices, `docs/privacy/` has a **draft** privacy policy and a
+printable parent/guardian consent form template. Both are explicitly marked as starting points,
+not finished legal documents -- have them reviewed by a lawyer familiar with your local
+student-data-privacy laws (COPPA/FERPA in the US, GDPR in the EU/UK) before using them with real
+students.

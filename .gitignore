@@ -5,6 +5,7 @@ venv/
 *.egg-info/
 build/
 dist/
+installer-output/
 *.spec.bak
 tools/
 offline-sdk/
@@ -12,6 +13,9 @@ node_modules/
 .pytest_cache/
 app/data/uploads/
 *.db
+.roster_key
+app/data/logs/
+app/data/license.txt
 *.wav
 !app/data/samples/*.wav
 .DS_Store

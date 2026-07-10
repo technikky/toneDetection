@@ -1,0 +1,66 @@
+{
+  "id": "starter-rhythm-1-steady-ta",
+  "title": "Rhythm Drill: Steady Ta",
+  "difficulty": "Beginner",
+  "key": "C",
+  "tempo_bpm": 88,
+  "abc": "X:1\nT:Rhythm Drill: Steady Ta\nM:4/4\nL:1/4\nQ:1/4=88\nK:C\nC C C C | C C C C |]",
+  "notes": [
+    {
+      "step": 1,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 0.0,
+      "duration": 0.682
+    },
+    {
+      "step": 2,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 0.682,
+      "duration": 0.682
+    },
+    {
+      "step": 3,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 1.364,
+      "duration": 0.682
+    },
+    {
+      "step": 4,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 2.045,
+      "duration": 0.682
+    },
+    {
+      "step": 5,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 2.727,
+      "duration": 0.682
+    },
+    {
+      "step": 6,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 3.409,
+      "duration": 0.682
+    },
+    {
+      "step": 7,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 4.091,
+      "duration": 0.682
+    },
+    {
+      "step": 8,
+      "midi": 60,
+      "solfege": "Do",
+      "start": 4.773,
+      "duration": 0.682
+    }
+  ]
+}
