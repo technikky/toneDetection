@@ -14,7 +14,7 @@ from typing import Optional
 import numpy as np
 import soundfile as sf
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
@@ -24,16 +24,23 @@ from app.config import SONGS_DIR, STATIC_DIR, TEMPLATES_DIR, UPLOADS_DIR, SAMPLE
 from app.dsp import solfege as solfege_dsp
 from app.dsp.grading import grade_submission
 from app.live import manager as live_manager
+from app.logging_config import configure_logging
 from app.musicxml_import import MusicXmlImportError, parse_musicxml
 from app.schemas import (
     AssessmentReport, CodeCheckResult, MySubmissionRecord, RosterAddRequest, RosterEntry,
     RosterUpdateRequest, SongDetail, SongPayload, SongSummary, SubmissionRecord,
 )
 
-logging.basicConfig(level=logging.INFO)
+configure_logging()
 log = logging.getLogger("sight_singing")
 
 app = FastAPI(title="Offline Sight-Singing & Solfège Assessment Tool")
+
+
+@app.exception_handler(Exception)
+async def _log_unhandled_exception(request: Request, exc: Exception):
+    log.exception("Unhandled exception on %s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error."})
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
