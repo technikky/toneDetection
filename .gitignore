@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+*.spec.bak
+tools/
+node_modules/
+.pytest_cache/
+app/data/uploads/
+*.wav
+!app/data/samples/*.wav
+.DS_Store
+Thumbs.db
