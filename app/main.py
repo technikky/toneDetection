@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
-from app import auth, db
+from app import auth, db, licensing
 from app.config import SONGS_DIR, STATIC_DIR, TEMPLATES_DIR, UPLOADS_DIR, SAMPLE_RATE
 from app.dsp import solfege as solfege_dsp
 from app.dsp.grading import grade_submission
@@ -189,7 +189,8 @@ async def teacher_dashboard(request: Request):
         return redirect
     return templates.TemplateResponse(
         request, "teacher.html",
-        {"songs": _list_songs(), "current_teacher": auth.current_username(request)},
+        {"songs": _list_songs(), "current_teacher": auth.current_username(request),
+         "license_info": licensing.get_current_license()},
     )
 
 
@@ -241,6 +242,28 @@ async def teacher_roster_page(request: Request):
     return templates.TemplateResponse(
         request, "roster.html", {"current_teacher": auth.current_username(request)},
     )
+
+
+@app.get("/teacher/license", response_class=HTMLResponse)
+async def teacher_license_page(request: Request, error: str | None = None, saved: bool = False):
+    redirect = _require_teacher_page(request)
+    if redirect:
+        return redirect
+    return templates.TemplateResponse(
+        request, "teacher_license.html",
+        {"current_teacher": auth.current_username(request),
+         "license_info": licensing.get_current_license(), "error": error, "saved": saved},
+    )
+
+
+@app.post("/teacher/license")
+async def teacher_license_submit(request: Request, license_key: str = Form(...)):
+    redirect = _require_teacher_page(request)
+    if redirect:
+        return redirect
+    if not licensing.save_license_key(license_key):
+        return RedirectResponse("/teacher/license?error=That+license+key+is+invalid+or+expired.", status_code=303)
+    return RedirectResponse("/teacher/license?saved=true", status_code=303)
 
 
 @app.get("/student", response_class=HTMLResponse)
