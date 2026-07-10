@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -22,6 +22,7 @@ from app import db
 from app.config import SONGS_DIR, STATIC_DIR, TEMPLATES_DIR, UPLOADS_DIR, SAMPLE_RATE
 from app.dsp import solfege as solfege_dsp
 from app.dsp.grading import grade_submission
+from app.live import manager as live_manager
 from app.musicxml_import import MusicXmlImportError, parse_musicxml
 from app.schemas import AssessmentReport, SongDetail, SongPayload, SongSummary, SubmissionRecord
 
@@ -108,6 +109,17 @@ async def teacher_editor_page(request: Request, song: str | None = None):
         request,
         "editor.html",
         {"songs": _list_songs(), "existing_song": existing_song},
+    )
+
+
+@app.get("/teacher/monitor", response_class=HTMLResponse)
+async def teacher_monitor_page(request: Request, song: str | None = None):
+    songs = _list_songs()
+    selected_song_id = song if (song and any(s["id"] == song for s in songs)) else (songs[0]["id"] if songs else None)
+    return templates.TemplateResponse(
+        request,
+        "monitor.html",
+        {"songs": songs, "selected_song_id": selected_song_id},
     )
 
 
@@ -221,7 +233,43 @@ async def submit_recording(
         report=report,
         take_filename=take_id,
     )
+    await live_manager.mark_submitted_by_name(student_name)
     return AssessmentReport(song_id=song_id, **report)
+
+
+@app.websocket("/ws/live")
+async def ws_live(websocket: WebSocket):
+    """Stage 14: one shared socket for both roles. Students stream live
+    pitch/status; teachers receive roster + pitch updates and can push a
+    "send to class" assignment that every connected student picks up.
+    """
+    await websocket.accept()
+    role = None
+    try:
+        while True:
+            data = await websocket.receive_json()
+            msg_type = data.get("type")
+
+            if msg_type == "join":
+                role = data.get("role")
+                if role == "student":
+                    name = (data.get("student_name") or "Unknown").strip()[:60] or "Unknown"
+                    await live_manager.student_join(websocket, name)
+                elif role == "teacher":
+                    await live_manager.teacher_join(websocket)
+            elif msg_type == "status" and role == "student":
+                await live_manager.student_status(websocket, str(data.get("status", "idle")))
+            elif msg_type == "pitch" and role == "student":
+                await live_manager.student_pitch(websocket, data.get("hz"), data.get("midi"), data.get("level"))
+            elif msg_type == "assign" and role == "teacher":
+                await live_manager.teacher_assign(data.get("song_id"), data.get("difficulty"))
+    except WebSocketDisconnect:
+        pass
+    finally:
+        if role == "student":
+            await live_manager.student_leave(websocket)
+        elif role == "teacher":
+            await live_manager.teacher_leave(websocket)
 
 
 def run():

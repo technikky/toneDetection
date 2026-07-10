@@ -30,6 +30,34 @@
 
   playBtn.addEventListener("click", () => pianoPlayer.play(currentTuneObj));
 
+  // Stage 14: live teacher/student session -- stream this student's pitch
+  // to any connected teacher monitor, and auto-switch when the teacher
+  // sends a new exercise to the class.
+  function sendJoin() {
+    live.send({ type: "join", role: "student", student_name: studentNameInput.value.trim() || "Unknown" });
+  }
+
+  const live = connectLiveSocket((message) => {
+    if (message.type === "assignment" && message.song_id && message.song_id !== currentSongId) {
+      window.location.href = `/student?song=${encodeURIComponent(message.song_id)}`;
+    }
+  });
+  studentNameInput.addEventListener("change", sendJoin);
+
+  let lastPitchSendAt = 0;
+  window.onLivePitchSample = (freq, level) => {
+    const now = Date.now();
+    if (now - lastPitchSendAt < 150) return;
+    lastPitchSendAt = now;
+    const hasFreq = freq && isFinite(freq) && freq > 0;
+    live.send({
+      type: "pitch",
+      hz: hasFreq ? Math.round(freq * 10) / 10 : null,
+      midi: hasFreq ? Math.round(hzToMidi(freq) * 100) / 100 : null,
+      level: Math.round(level * 100) / 100,
+    });
+  };
+
   async function loadSong(songId) {
     const res = await fetch(`/api/songs/${songId}`);
     if (!res.ok) return;
@@ -70,6 +98,7 @@
       recordPulse.classList.remove("hidden");
       recordStatus.textContent = "Recording… tap to stop";
       submitBtn.disabled = true;
+      live.send({ type: "status", status: "recording" });
     } else {
       const { blob, url } = stopRecording();
       stopPitchViz();
@@ -81,6 +110,7 @@
       playback.src = url;
       playback.classList.remove("hidden");
       submitBtn.disabled = false;
+      live.send({ type: "status", status: "idle" });
     }
   });
 
@@ -110,4 +140,5 @@
   });
 
   loadSong(currentSongId);
+  sendJoin();
 })();

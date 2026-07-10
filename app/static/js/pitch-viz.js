@@ -110,6 +110,11 @@ function startPitchViz(stream) {
     drawWaveform(input);
     const freq = pv.detectPitch(input);
     updateLivePitch(freq);
+    if (window.onLivePitchSample) {
+      let peak = 0;
+      for (let i = 0; i < input.length; i++) peak = Math.max(peak, Math.abs(input[i]));
+      window.onLivePitchSample(freq, peak);
+    }
   };
 
   pv.meydaAnalyzer = Meyda.createMeydaAnalyzer({

@@ -21,7 +21,7 @@
       <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Key of {{ song.key }} &middot; {{ song.tempo_bpm }} BPM &middot; {{ song.notes|length }} notes</p>
     </div>
     <div class="mt-6 flex gap-3">
-      <a href="/student?song={{ song.id }}" class="btn-primary flex-1 text-center">Open for Student</a>
+      <a href="/teacher/monitor?song={{ song.id }}" class="btn-primary flex-1 text-center">Send to Class</a>
       <a href="/teacher/editor?song={{ song.id }}" class="btn-secondary" aria-label="Edit {{ song.title }}">Edit</a>
     </div>
   </div>
