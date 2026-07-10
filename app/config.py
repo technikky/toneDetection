@@ -21,6 +21,10 @@ SOLFEGE_MODEL_PATH = MODELS_DIR / "solfege_classifier.joblib"
 UPLOADS_DIR = WRITABLE_DIR / "uploads"
 TRAINING_DIR = BASE_DIR / "data" / "training"
 
+# Stage 12: local record-keeping (students + graded submissions). Lives next
+# to the .exe alongside UPLOADS_DIR, not in the read-only bundle.
+DB_PATH = WRITABLE_DIR / "sightsinging.db"
+
 for _d in (UPLOADS_DIR, MODELS_DIR, SONGS_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 

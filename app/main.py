@@ -4,8 +4,10 @@ audio submission endpoint that drives the Stage 9 grading engine.
 import io
 import json
 import logging
+import re
 import time
 import uuid
+from datetime import date as date_cls
 
 import numpy as np
 import soundfile as sf
@@ -15,10 +17,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
+from app import db
 from app.config import SONGS_DIR, STATIC_DIR, TEMPLATES_DIR, UPLOADS_DIR, SAMPLE_RATE
 from app.dsp import solfege as solfege_dsp
 from app.dsp.grading import grade_submission
-from app.schemas import AssessmentReport, SongDetail, SongSummary
+from app.schemas import AssessmentReport, SongDetail, SongPayload, SongSummary, SubmissionRecord
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("sight_singing")
@@ -27,6 +30,8 @@ app = FastAPI(title="Offline Sight-Singing & Solfège Assessment Tool")
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+db.init_db()
 
 
 def _load_song(song_id: str) -> dict:
@@ -43,6 +48,37 @@ def _list_songs() -> list:
     return songs
 
 
+def _slugify(title: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", title.strip().lower()).strip("-")
+    return slug or "exercise"
+
+
+def _unique_song_id(title: str) -> str:
+    base = _slugify(title)
+    song_id = base
+    n = 2
+    while (SONGS_DIR / f"{song_id}.json").exists():
+        song_id = f"{base}-{n}"
+        n += 1
+    return song_id
+
+
+def _save_song(song_id: str, payload: SongPayload) -> dict:
+    if not payload.notes:
+        raise HTTPException(status_code=400, detail="An exercise needs at least one note.")
+    song = {
+        "id": song_id,
+        "title": payload.title.strip(),
+        "difficulty": payload.difficulty.strip(),
+        "key": payload.key.strip(),
+        "tempo_bpm": payload.tempo_bpm,
+        "abc": payload.abc,
+        "notes": [n.model_dump() for n in payload.notes],
+    }
+    (SONGS_DIR / f"{song_id}.json").write_text(json.dumps(song, indent=2), encoding="utf-8")
+    return song
+
+
 @app.get("/", response_class=HTMLResponse)
 async def role_picker(request: Request):
     return templates.TemplateResponse(request, "index.html")
@@ -51,6 +87,26 @@ async def role_picker(request: Request):
 @app.get("/teacher", response_class=HTMLResponse)
 async def teacher_dashboard(request: Request):
     return templates.TemplateResponse(request, "teacher.html", {"songs": _list_songs()})
+
+
+@app.get("/teacher/submissions", response_class=HTMLResponse)
+async def teacher_submissions_page(request: Request, date: str | None = None):
+    selected_date = date or date_cls.today().isoformat()
+    return templates.TemplateResponse(
+        request,
+        "teacher_submissions.html",
+        {"selected_date": selected_date},
+    )
+
+
+@app.get("/teacher/editor", response_class=HTMLResponse)
+async def teacher_editor_page(request: Request, song: str | None = None):
+    existing_song = _load_song(song) if song else None
+    return templates.TemplateResponse(
+        request,
+        "editor.html",
+        {"songs": _list_songs(), "existing_song": existing_song},
+    )
 
 
 @app.get("/student", response_class=HTMLResponse)
@@ -81,13 +137,47 @@ async def api_get_song(song_id: str):
     return SongDetail(**_load_song(song_id))
 
 
+@app.post("/api/songs", response_model=SongDetail, status_code=201)
+async def api_create_song(payload: SongPayload):
+    if not payload.title.strip():
+        raise HTTPException(status_code=400, detail="Title is required.")
+    song_id = _unique_song_id(payload.title)
+    song = _save_song(song_id, payload)
+    return SongDetail(**song)
+
+
+@app.put("/api/songs/{song_id}", response_model=SongDetail)
+async def api_update_song(song_id: str, payload: SongPayload):
+    _load_song(song_id)  # 404s if it doesn't already exist
+    song = _save_song(song_id, payload)
+    return SongDetail(**song)
+
+
 @app.get("/api/status")
 async def api_status():
     return {"solfege_classifier_ready": solfege_dsp.is_ready(), "sample_rate": SAMPLE_RATE}
 
 
+@app.get("/api/submissions", response_model=list[SubmissionRecord])
+async def api_list_submissions(date: str | None = None, student: str | None = None):
+    return [SubmissionRecord(**row) for row in db.list_submissions(date=date, student_name=student)]
+
+
+@app.get("/api/students", response_model=list[str])
+async def api_list_students():
+    return db.list_students()
+
+
 @app.post("/api/submit", response_model=AssessmentReport)
-async def submit_recording(song_id: str = Form(...), file: UploadFile = File(...)):
+async def submit_recording(
+    song_id: str = Form(...),
+    student_name: str = Form(...),
+    file: UploadFile = File(...),
+):
+    student_name = student_name.strip()
+    if not student_name:
+        raise HTTPException(status_code=400, detail="student_name is required.")
+
     song = _load_song(song_id)
     raw_bytes = await file.read()
     if not raw_bytes:
@@ -109,6 +199,13 @@ async def submit_recording(song_id: str = Form(...), file: UploadFile = File(...
     target_notes = [TargetNote(**n) for n in song["notes"]]
 
     report = grade_submission(np.asarray(audio, dtype=np.float32), sr, target_notes)
+    db.record_submission(
+        student_name=student_name,
+        song_id=song_id,
+        song_title=song["title"],
+        report=report,
+        take_filename=take_id,
+    )
     return AssessmentReport(song_id=song_id, **report)
 
 

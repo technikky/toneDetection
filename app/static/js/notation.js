@@ -1,6 +1,6 @@
 /** Stage 5: renders offline ABC notation into crisp SVG sheet music via ABCjs. */
-function renderNotation(abcString) {
-  ABCJS.renderAbc("notation", abcString, {
+function renderNotation(abcString, targetId) {
+  return ABCJS.renderAbc(targetId || "notation", abcString, {
     responsive: "resize",
     staffwidth: 700,
     paddingtop: 10,

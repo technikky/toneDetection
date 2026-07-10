@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Sheet Music Editor{% endblock %}
+
+{% block head %}
+<style>
+  #notation-preview { min-height: 100px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="editor-root" data-existing-song='{{ existing_song | tojson if existing_song else "null" }}'>
+  <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+    <div>
+      <h1 class="text-2xl font-bold" id="editor-heading">New Exercise</h1>
+      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Write ABC notation and the target note/solfège matrix used for grading.</p>
+    </div>
+    <div class="flex items-end gap-3">
+      <div>
+        <label for="load-existing" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Load existing exercise</label>
+        <select id="load-existing" class="block mt-1 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-sm font-medium focus:ring-brand-500 focus:border-brand-500">
+          <option value="">New Exercise&hellip;</option>
+          {% for song in songs %}
+          <option value="{{ song.id }}" {% if existing_song and song.id == existing_song.id %}selected{% endif %}>{{ song.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <a href="/teacher" class="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline mb-2">&larr; Dashboard</a>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+      <div class="card p-6">
+        <h3 class="font-semibold mb-4">Exercise details</h3>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label for="f-title" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Title</label>
+            <input id="f-title" type="text" maxlength="120" class="input mt-1" />
+          </div>
+          <div>
+            <label for="f-difficulty" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Difficulty</label>
+            <select id="f-difficulty" class="input mt-1">
+              <option>Beginner</option>
+              <option>Intermediate</option>
+              <option>Advanced</option>
+            </select>
+          </div>
+          <div>
+            <label for="f-key" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Key</label>
+            <input id="f-key" type="text" maxlength="8" placeholder="C" class="input mt-1" />
+          </div>
+          <div>
+            <label for="f-tempo" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Tempo (BPM)</label>
+            <input id="f-tempo" type="number" min="20" max="300" class="input mt-1" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-6">
+        <h3 class="font-semibold mb-1">ABC notation</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">What the student reads on screen. See <a href="https://abcnotation.com/wiki/abc:standard:v2.1" target="_blank" rel="noopener" class="underline">the ABC standard</a> for syntax.</p>
+        <textarea id="f-abc" rows="6" spellcheck="false"
+          class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 font-mono text-sm p-3 focus:ring-brand-500 focus:border-brand-500"></textarea>
+        <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-4 mb-2">Live preview</p>
+        <div id="notation-preview" class="overflow-x-auto rounded-xl bg-white dark:bg-slate-100 p-4 text-slate-900"></div>
+        <p id="abc-error" class="text-xs text-rose-600 dark:text-rose-400 mt-2 hidden"></p>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="card p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">Target notes</h3>
+          <button id="add-note" type="button" class="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline">+ Add note</button>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Drives grading. Must correspond in order to the notation above.</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <th class="py-1 pr-2">#</th>
+                <th class="py-1 pr-2">MIDI</th>
+                <th class="py-1 pr-2">Note</th>
+                <th class="py-1 pr-2">Solfège</th>
+                <th class="py-1 pr-2">Start</th>
+                <th class="py-1 pr-2">Dur</th>
+                <th class="py-1"></th>
+              </tr>
+            </thead>
+            <tbody id="notes-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card p-6">
+        <button id="save-btn" class="btn-primary w-full">Save Exercise</button>
+        <p id="save-status" class="text-sm mt-3 hidden"></p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/vendor/abcjs/abcjs-basic-min.js"></script>
+<script src="/static/js/notation.js"></script>
+<script src="/static/js/editor.js"></script>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Submission History{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-bold">Submission History</h1>
+    <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">See which student sang which exercise, and the score they received.</p>
+  </div>
+  <a href="/teacher" class="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline">&larr; Back to dashboard</a>
+</div>
+
+<div class="card p-6">
+  <div class="flex flex-wrap items-end gap-4 mb-5">
+    <div>
+      <label for="date-filter" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Date</label>
+      <input id="date-filter" type="date" value="{{ selected_date }}"
+        class="block mt-1 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-sm font-medium focus:ring-brand-500 focus:border-brand-500" />
+    </div>
+    <div>
+      <label for="student-filter" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Student (optional)</label>
+      <input id="student-filter" type="text" placeholder="All students" autocomplete="off"
+        class="block mt-1 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-sm font-medium focus:ring-brand-500 focus:border-brand-500 w-48" />
+    </div>
+    <span id="result-count" class="pill bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"></span>
+  </div>
+
+  <div id="submissions-table" class="overflow-x-auto"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/teacher_submissions.js"></script>
+{% endblock %}
