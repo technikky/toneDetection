@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Teacher Login{% endblock %}
+{% block content %}
+<div class="max-w-sm mx-auto py-12">
+  <div class="card p-8">
+    <h1 class="text-xl font-bold mb-1">Teacher Login</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Sign in to manage exercises, the roster, and student scores.</p>
+
+    {% if error %}
+    <p class="text-sm text-rose-600 dark:text-rose-400 mb-4">{{ error }}</p>
+    {% endif %}
+
+    <form method="post" action="/teacher/login" class="space-y-4">
+      <input type="hidden" name="next" value="{{ next }}" />
+      <div>
+        <label for="username" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Username</label>
+        <input id="username" name="username" type="text" required autocomplete="username" class="input mt-1" />
+      </div>
+      <div>
+        <label for="password" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Password</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password" class="input mt-1" />
+      </div>
+      <button type="submit" class="btn-primary w-full">Log In</button>
+    </form>
+
+    {% if needs_setup %}
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-6">
+      No teacher account exists yet.
+      <a href="/teacher/setup" class="text-brand-600 dark:text-brand-400 hover:underline">Create the first one &rarr;</a>
+    </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

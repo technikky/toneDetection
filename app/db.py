@@ -11,6 +11,13 @@ from typing import Optional
 from app.config import DB_PATH
 
 _SCHEMA = """
+CREATE TABLE IF NOT EXISTS teachers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS students (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -45,6 +52,29 @@ def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+
+
+def count_teachers() -> int:
+    with _connect() as conn:
+        return conn.execute("SELECT COUNT(*) AS n FROM teachers").fetchone()["n"]
+
+
+def create_teacher(username: str, password_hash: str) -> int:
+    with _connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO teachers (username, password_hash, created_at) VALUES (?, ?, ?)",
+            (username.strip(), password_hash, datetime.now().isoformat(timespec="seconds")),
+        )
+        return cur.lastrowid
+
+
+def get_teacher_by_username(username: str) -> Optional[dict]:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT id, username, password_hash FROM teachers WHERE username = ? COLLATE NOCASE",
+            (username.strip(),),
+        ).fetchone()
+        return dict(row) if row else None
 
 
 def get_or_create_student(name: str) -> int:

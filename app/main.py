@@ -9,16 +9,17 @@ import time
 import uuid
 from datetime import date as date_cls
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import soundfile as sf
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
-from app import db
+from app import auth, db
 from app.config import SONGS_DIR, STATIC_DIR, TEMPLATES_DIR, UPLOADS_DIR, SAMPLE_RATE
 from app.dsp import solfege as solfege_dsp
 from app.dsp.grading import grade_submission
@@ -66,6 +67,14 @@ def _unique_song_id(title: str) -> str:
     return song_id
 
 
+def _require_teacher_page(request: Request) -> Optional[RedirectResponse]:
+    """Returns a redirect-to-login Response if not authenticated, else None."""
+    if auth.current_username(request):
+        return None
+    next_qs = f"?next={request.url.path}"
+    return RedirectResponse(f"/teacher/login{next_qs}", status_code=303)
+
+
 def _save_song(song_id: str, payload: SongPayload) -> dict:
     if not payload.notes:
         raise HTTPException(status_code=400, detail="An exercise needs at least one note.")
@@ -87,39 +96,130 @@ async def role_picker(request: Request):
     return templates.TemplateResponse(request, "index.html")
 
 
+@app.get("/teacher/login", response_class=HTMLResponse)
+async def teacher_login_page(request: Request, next: str = "/teacher", error: str | None = None):
+    if auth.current_username(request):
+        return RedirectResponse(next, status_code=303)
+    return templates.TemplateResponse(
+        request, "teacher_login.html",
+        {"next": next, "error": error, "needs_setup": db.count_teachers() == 0},
+    )
+
+
+@app.post("/teacher/login")
+async def teacher_login_submit(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    next: str = Form("/teacher"),
+):
+    teacher = db.get_teacher_by_username(username)
+    if not teacher or not auth.verify_password(password, teacher["password_hash"]):
+        return RedirectResponse(
+            f"/teacher/login?next={next}&error=Incorrect+username+or+password", status_code=303
+        )
+    token = auth.create_session(teacher["username"])
+    response = RedirectResponse(next, status_code=303)
+    response.set_cookie(auth.SESSION_COOKIE, token, httponly=True, samesite="lax", max_age=auth.SESSION_TTL_SECONDS)
+    return response
+
+
+@app.post("/teacher/logout")
+async def teacher_logout(request: Request):
+    auth.destroy_session(request.cookies.get(auth.SESSION_COOKIE))
+    response = RedirectResponse("/teacher/login", status_code=303)
+    response.delete_cookie(auth.SESSION_COOKIE)
+    return response
+
+
+@app.get("/teacher/setup", response_class=HTMLResponse)
+async def teacher_setup_page(request: Request, error: str | None = None):
+    is_first_run = db.count_teachers() == 0
+    if not is_first_run and not auth.current_username(request):
+        return RedirectResponse("/teacher/login?next=/teacher/setup", status_code=303)
+    return templates.TemplateResponse(
+        request, "teacher_setup.html", {"is_first_run": is_first_run, "error": error}
+    )
+
+
+@app.post("/teacher/setup")
+async def teacher_setup_submit(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+):
+    is_first_run = db.count_teachers() == 0
+    if not is_first_run and not auth.current_username(request):
+        return RedirectResponse("/teacher/login?next=/teacher/setup", status_code=303)
+
+    username = username.strip()
+    if len(username) < 3:
+        return RedirectResponse("/teacher/setup?error=Username+must+be+at+least+3+characters", status_code=303)
+    if len(password) < 8:
+        return RedirectResponse("/teacher/setup?error=Password+must+be+at+least+8+characters", status_code=303)
+    if db.get_teacher_by_username(username):
+        return RedirectResponse("/teacher/setup?error=That+username+is+already+taken", status_code=303)
+
+    db.create_teacher(username, auth.hash_password(password))
+
+    if is_first_run:
+        token = auth.create_session(username)
+        response = RedirectResponse("/teacher", status_code=303)
+        response.set_cookie(auth.SESSION_COOKIE, token, httponly=True, samesite="lax", max_age=auth.SESSION_TTL_SECONDS)
+        return response
+    return RedirectResponse("/teacher", status_code=303)
+
+
 @app.get("/teacher", response_class=HTMLResponse)
 async def teacher_dashboard(request: Request):
-    return templates.TemplateResponse(request, "teacher.html", {"songs": _list_songs()})
+    if db.count_teachers() == 0:
+        return RedirectResponse("/teacher/setup", status_code=303)
+    redirect = _require_teacher_page(request)
+    if redirect:
+        return redirect
+    return templates.TemplateResponse(
+        request, "teacher.html",
+        {"songs": _list_songs(), "current_teacher": auth.current_username(request)},
+    )
 
 
 @app.get("/teacher/submissions", response_class=HTMLResponse)
 async def teacher_submissions_page(request: Request, date: str | None = None):
+    redirect = _require_teacher_page(request)
+    if redirect:
+        return redirect
     selected_date = date or date_cls.today().isoformat()
     return templates.TemplateResponse(
         request,
         "teacher_submissions.html",
-        {"selected_date": selected_date},
+        {"selected_date": selected_date, "current_teacher": auth.current_username(request)},
     )
 
 
 @app.get("/teacher/editor", response_class=HTMLResponse)
 async def teacher_editor_page(request: Request, song: str | None = None):
+    redirect = _require_teacher_page(request)
+    if redirect:
+        return redirect
     existing_song = _load_song(song) if song else None
     return templates.TemplateResponse(
         request,
         "editor.html",
-        {"songs": _list_songs(), "existing_song": existing_song},
+        {"songs": _list_songs(), "existing_song": existing_song, "current_teacher": auth.current_username(request)},
     )
 
 
 @app.get("/teacher/monitor", response_class=HTMLResponse)
 async def teacher_monitor_page(request: Request, song: str | None = None):
+    redirect = _require_teacher_page(request)
+    if redirect:
+        return redirect
     songs = _list_songs()
     selected_song_id = song if (song and any(s["id"] == song for s in songs)) else (songs[0]["id"] if songs else None)
     return templates.TemplateResponse(
         request,
         "monitor.html",
-        {"songs": songs, "selected_song_id": selected_song_id},
+        {"songs": songs, "selected_song_id": selected_song_id, "current_teacher": auth.current_username(request)},
     )
 
 
@@ -152,7 +252,7 @@ async def api_get_song(song_id: str):
 
 
 @app.post("/api/songs", response_model=SongDetail, status_code=201)
-async def api_create_song(payload: SongPayload):
+async def api_create_song(payload: SongPayload, _teacher: str = Depends(auth.require_teacher_api)):
     if not payload.title.strip():
         raise HTTPException(status_code=400, detail="Title is required.")
     song_id = _unique_song_id(payload.title)
@@ -161,14 +261,14 @@ async def api_create_song(payload: SongPayload):
 
 
 @app.put("/api/songs/{song_id}", response_model=SongDetail)
-async def api_update_song(song_id: str, payload: SongPayload):
+async def api_update_song(song_id: str, payload: SongPayload, _teacher: str = Depends(auth.require_teacher_api)):
     _load_song(song_id)  # 404s if it doesn't already exist
     song = _save_song(song_id, payload)
     return SongDetail(**song)
 
 
 @app.post("/api/songs/import-musicxml", response_model=SongPayload)
-async def api_import_musicxml(file: UploadFile = File(...)):
+async def api_import_musicxml(file: UploadFile = File(...), _teacher: str = Depends(auth.require_teacher_api)):
     raw = await file.read()
     if not raw:
         raise HTTPException(status_code=400, detail="Empty file upload.")
@@ -186,12 +286,14 @@ async def api_status():
 
 
 @app.get("/api/submissions", response_model=list[SubmissionRecord])
-async def api_list_submissions(date: str | None = None, student: str | None = None):
+async def api_list_submissions(
+    date: str | None = None, student: str | None = None, _teacher: str = Depends(auth.require_teacher_api)
+):
     return [SubmissionRecord(**row) for row in db.list_submissions(date=date, student_name=student)]
 
 
 @app.get("/api/students", response_model=list[str])
-async def api_list_students():
+async def api_list_students(_teacher: str = Depends(auth.require_teacher_api)):
     return db.list_students()
 
 
@@ -251,11 +353,16 @@ async def ws_live(websocket: WebSocket):
             msg_type = data.get("type")
 
             if msg_type == "join":
-                role = data.get("role")
-                if role == "student":
+                requested_role = data.get("role")
+                if requested_role == "student":
+                    role = "student"
                     name = (data.get("student_name") or "Unknown").strip()[:60] or "Unknown"
                     await live_manager.student_join(websocket, name)
-                elif role == "teacher":
+                elif requested_role == "teacher":
+                    if not auth.current_username_ws(websocket.cookies):
+                        await websocket.close(code=4401, reason="Teacher login required.")
+                        return
+                    role = "teacher"
                     await live_manager.teacher_join(websocket)
             elif msg_type == "status" and role == "student":
                 await live_manager.student_status(websocket, str(data.get("status", "idle")))
