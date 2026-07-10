@@ -19,9 +19,10 @@
     <div class="card p-6">
       <div class="flex flex-wrap items-end justify-between gap-4 mb-4">
         <div>
-          <label for="student-name" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Student</label>
-          <input id="student-name" type="text" placeholder="Enter your name" autocomplete="off" maxlength="60"
-            class="block mt-1 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-sm font-medium focus:ring-brand-500 focus:border-brand-500 w-48" />
+          <label for="access-code" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Access Code</label>
+          <input id="access-code" type="text" placeholder="ABC123" autocomplete="off" maxlength="6"
+            class="block mt-1 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-sm font-medium font-mono tracking-widest uppercase focus:ring-brand-500 focus:border-brand-500 w-32" />
+          <p id="access-code-status" class="text-xs mt-1 hidden"></p>
         </div>
         <div>
           <label for="song-select" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Exercise</label>
@@ -33,7 +34,7 @@
         </div>
         <span id="tempo-badge" class="pill bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"></span>
       </div>
-      <p id="student-name-error" class="text-xs text-rose-600 dark:text-rose-400 mb-3 hidden">Enter your name above before recording.</p>
+      <p id="student-name-error" class="text-xs text-rose-600 dark:text-rose-400 mb-3 hidden">Ask your teacher for your access code before recording.</p>
       <div id="notation" class="overflow-x-auto rounded-xl bg-white dark:bg-slate-100 p-4 text-slate-900"></div>
       <button id="play-btn" type="button" class="btn-secondary mt-4">▶ Play</button>
     </div>
@@ -102,6 +103,13 @@
       <div class="mt-5">
         <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Time-aligned error graph</p>
         <canvas id="error-graph" width="400" height="140" class="rounded-lg bg-slate-900 w-full"></canvas>
+      </div>
+    </div>
+
+    <div class="card p-6">
+      <h3 class="font-semibold mb-3">My Past Attempts</h3>
+      <div id="my-attempts">
+        <p class="text-sm text-slate-500 dark:text-slate-400">Enter your access code above to see your history.</p>
       </div>
     </div>
   </div>

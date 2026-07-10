@@ -67,3 +67,38 @@ class SubmissionRecord(BaseModel):
     pitch_accuracy: float
     pronunciation_accuracy: float
     overall_score: float
+
+
+class MySubmissionRecord(BaseModel):
+    """A student's own past attempt -- no other student's name/data included."""
+    id: int
+    song_id: str
+    song_title: str
+    submitted_at: str
+    pitch_accuracy: float
+    pronunciation_accuracy: float
+    overall_score: float
+
+
+class RosterEntry(BaseModel):
+    """Stage 15: a roster student, teacher-facing (real name visible)."""
+    id: int
+    access_code: str
+    name: str
+    consent_on_file: bool
+    active: bool
+    created_at: str
+
+
+class RosterAddRequest(BaseModel):
+    name: str
+    consent_on_file: bool = False
+
+
+class RosterUpdateRequest(BaseModel):
+    active: bool
+
+
+class CodeCheckResult(BaseModel):
+    valid: bool
+    first_name: Optional[str] = None

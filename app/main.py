@@ -25,7 +25,10 @@ from app.dsp import solfege as solfege_dsp
 from app.dsp.grading import grade_submission
 from app.live import manager as live_manager
 from app.musicxml_import import MusicXmlImportError, parse_musicxml
-from app.schemas import AssessmentReport, SongDetail, SongPayload, SongSummary, SubmissionRecord
+from app.schemas import (
+    AssessmentReport, CodeCheckResult, MySubmissionRecord, RosterAddRequest, RosterEntry,
+    RosterUpdateRequest, SongDetail, SongPayload, SongSummary, SubmissionRecord,
+)
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("sight_singing")
@@ -223,6 +226,16 @@ async def teacher_monitor_page(request: Request, song: str | None = None):
     )
 
 
+@app.get("/teacher/roster", response_class=HTMLResponse)
+async def teacher_roster_page(request: Request):
+    redirect = _require_teacher_page(request)
+    if redirect:
+        return redirect
+    return templates.TemplateResponse(
+        request, "roster.html", {"current_teacher": auth.current_username(request)},
+    )
+
+
 @app.get("/student", response_class=HTMLResponse)
 async def student_dashboard(request: Request, song: str | None = None):
     songs = _list_songs()
@@ -292,20 +305,54 @@ async def api_list_submissions(
     return [SubmissionRecord(**row) for row in db.list_submissions(date=date, student_name=student)]
 
 
-@app.get("/api/students", response_model=list[str])
-async def api_list_students(_teacher: str = Depends(auth.require_teacher_api)):
-    return db.list_students()
+@app.get("/api/roster", response_model=list[RosterEntry])
+async def api_list_roster(_teacher: str = Depends(auth.require_teacher_api)):
+    return [RosterEntry(**row) for row in db.list_roster()]
+
+
+@app.post("/api/roster", response_model=RosterEntry, status_code=201)
+async def api_add_student(payload: RosterAddRequest, _teacher: str = Depends(auth.require_teacher_api)):
+    if not payload.name.strip():
+        raise HTTPException(status_code=400, detail="Name is required.")
+    return RosterEntry(**db.add_student(payload.name, payload.consent_on_file))
+
+
+@app.patch("/api/roster/{student_id}", response_model=dict)
+async def api_update_student(
+    student_id: int, payload: RosterUpdateRequest, _teacher: str = Depends(auth.require_teacher_api)
+):
+    if not db.set_student_active(student_id, payload.active):
+        raise HTTPException(status_code=404, detail="No student with that id.")
+    return {"ok": True}
+
+
+@app.get("/api/roster/verify-code", response_model=CodeCheckResult)
+async def api_verify_access_code(code: str):
+    """Public (student-facing): confirms a code is valid without exposing
+    the rest of the roster -- just the one matching student's first name,
+    as a "Hi, Alex!" confirmation before they start practicing."""
+    student = db.get_student_by_code(code)
+    if not student:
+        return CodeCheckResult(valid=False)
+    return CodeCheckResult(valid=True, first_name=student["name"].split()[0])
+
+
+@app.get("/api/my-submissions", response_model=list[MySubmissionRecord])
+async def api_my_submissions(code: str):
+    """Public (student-facing): a student's own past attempts, gated by
+    their own access code -- never another student's."""
+    return [MySubmissionRecord(**row) for row in db.list_submissions_for_code(code)]
 
 
 @app.post("/api/submit", response_model=AssessmentReport)
 async def submit_recording(
     song_id: str = Form(...),
-    student_name: str = Form(...),
+    access_code: str = Form(...),
     file: UploadFile = File(...),
 ):
-    student_name = student_name.strip()
-    if not student_name:
-        raise HTTPException(status_code=400, detail="student_name is required.")
+    student = db.get_student_by_code(access_code)
+    if not student:
+        raise HTTPException(status_code=400, detail="Unrecognized access code. Check with your teacher.")
 
     song = _load_song(song_id)
     raw_bytes = await file.read()
@@ -329,13 +376,13 @@ async def submit_recording(
 
     report = grade_submission(np.asarray(audio, dtype=np.float32), sr, target_notes)
     db.record_submission(
-        student_name=student_name,
+        student_id=student["id"],
         song_id=song_id,
         song_title=song["title"],
         report=report,
         take_filename=take_id,
     )
-    await live_manager.mark_submitted_by_name(student_name)
+    await live_manager.mark_submitted_by_name(student["name"])
     return AssessmentReport(song_id=song_id, **report)
 
 
@@ -355,9 +402,12 @@ async def ws_live(websocket: WebSocket):
             if msg_type == "join":
                 requested_role = data.get("role")
                 if requested_role == "student":
+                    student = db.get_student_by_code(data.get("access_code") or "")
+                    if not student:
+                        await websocket.close(code=4400, reason="Unrecognized access code.")
+                        return
                     role = "student"
-                    name = (data.get("student_name") or "Unknown").strip()[:60] or "Unknown"
-                    await live_manager.student_join(websocket, name)
+                    await live_manager.student_join(websocket, student["name"])
                 elif requested_role == "teacher":
                     if not auth.current_username_ws(websocket.cookies):
                         await websocket.close(code=4401, reason="Teacher login required.")

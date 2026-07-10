@@ -12,6 +12,8 @@ node_modules/
 .pytest_cache/
 app/data/uploads/
 *.db
+.roster_key
+app/data/logs/
 *.wav
 !app/data/samples/*.wav
 .DS_Store
