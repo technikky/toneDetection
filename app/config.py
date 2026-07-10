@@ -1,19 +1,31 @@
 """Central paths and constants for the offline sight-singing app."""
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / "static"
-TEMPLATES_DIR = BASE_DIR / "templates"
-SONGS_DIR = BASE_DIR / "data" / "songs"
-UPLOADS_DIR = BASE_DIR / "data" / "uploads"
-TRAINING_DIR = BASE_DIR / "data" / "training"
-MODELS_DIR = BASE_DIR / "models"
+FROZEN = getattr(sys, "frozen", False)
+
+# Stage 11: when frozen by PyInstaller, bundled read-only assets (templates,
+# static, songs, the trained classifier) live under the one-file extraction
+# dir (sys._MEIPASS) instead of next to this file. Writable data must live
+# next to the .exe instead, since _MEIPASS is a temp dir wiped on exit.
+APP_ROOT = Path(sys._MEIPASS).resolve() / "app" if FROZEN else BASE_DIR
+WRITABLE_DIR = (Path(sys.executable).resolve().parent / "data") if FROZEN else (BASE_DIR / "data")
+
+STATIC_DIR = APP_ROOT / "static"
+TEMPLATES_DIR = APP_ROOT / "templates"
+SONGS_DIR = APP_ROOT / "data" / "songs"
+MODELS_DIR = APP_ROOT / "models"
 SOLFEGE_MODEL_PATH = MODELS_DIR / "solfege_classifier.joblib"
 
-# Stage 12: local record-keeping (students + graded submissions).
-DB_PATH = BASE_DIR / "data" / "sightsinging.db"
+UPLOADS_DIR = WRITABLE_DIR / "uploads"
+TRAINING_DIR = BASE_DIR / "data" / "training"
 
-for _d in (UPLOADS_DIR, TRAINING_DIR, MODELS_DIR, SONGS_DIR):
+# Stage 12: local record-keeping (students + graded submissions). Lives next
+# to the .exe alongside UPLOADS_DIR, not in the read-only bundle.
+DB_PATH = WRITABLE_DIR / "sightsinging.db"
+
+for _d in (UPLOADS_DIR, MODELS_DIR, SONGS_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 # The seven movable-do solfège syllables this system recognizes.
