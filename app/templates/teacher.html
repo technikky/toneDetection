@@ -25,8 +25,13 @@
 </div>
 
 <div class="card p-6 mt-8">
-  <h3 class="font-semibold mb-2">Recent submissions</h3>
-  <p class="text-sm text-slate-500 dark:text-slate-400">Raw takes are stored locally in <code class="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800">app/data/uploads/</code> for review or as future retraining data for the solfège classifier.</p>
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="font-semibold">Today's submissions</h3>
+    <a href="/teacher/submissions" class="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline">View full history &rarr;</a>
+  </div>
+  <div id="today-submissions">
+    <p class="text-sm text-slate-500 dark:text-slate-400">Loading&hellip;</p>
+  </div>
 </div>
 {% endblock %}
 
@@ -42,5 +47,40 @@
       el.className = "pill bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300";
     }
   }).catch(() => {});
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+  fetch(`/api/submissions?date=${todayISO}`).then(r => r.json()).then(rows => {
+    const el = document.getElementById("today-submissions");
+    if (!rows.length) {
+      el.innerHTML = '<p class="text-sm text-slate-500 dark:text-slate-400">No submissions yet today.</p>';
+      return;
+    }
+    const table = document.createElement("table");
+    table.className = "w-full text-sm";
+    table.innerHTML = `
+      <thead>
+        <tr class="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+          <th class="py-2 pr-3">Student</th>
+          <th class="py-2 pr-3">Exercise</th>
+          <th class="py-2 pr-3">Time</th>
+          <th class="py-2 pr-3 text-right">Overall</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr class="border-b border-slate-100 dark:border-slate-800 last:border-0">
+            <td class="py-2 pr-3 font-medium">${r.student_name}</td>
+            <td class="py-2 pr-3 text-slate-600 dark:text-slate-400">${r.song_title}</td>
+            <td class="py-2 pr-3 text-slate-500 dark:text-slate-500">${r.submitted_at.slice(11, 16)}</td>
+            <td class="py-2 pr-3 text-right font-semibold">${r.overall_score}%</td>
+          </tr>
+        `).join("")}
+      </tbody>`;
+    el.innerHTML = "";
+    el.appendChild(table);
+  }).catch(() => {
+    document.getElementById("today-submissions").innerHTML =
+      '<p class="text-sm text-rose-600 dark:text-rose-400">Could not load submissions.</p>';
+  });
 </script>
 {% endblock %}

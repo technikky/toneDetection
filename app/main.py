@@ -6,6 +6,7 @@ import json
 import logging
 import time
 import uuid
+from datetime import date as date_cls
 
 import numpy as np
 import soundfile as sf
@@ -19,7 +20,7 @@ from app import db
 from app.config import SONGS_DIR, STATIC_DIR, TEMPLATES_DIR, UPLOADS_DIR, SAMPLE_RATE
 from app.dsp import solfege as solfege_dsp
 from app.dsp.grading import grade_submission
-from app.schemas import AssessmentReport, SongDetail, SongSummary
+from app.schemas import AssessmentReport, SongDetail, SongSummary, SubmissionRecord
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("sight_singing")
@@ -56,6 +57,16 @@ async def teacher_dashboard(request: Request):
     return templates.TemplateResponse(request, "teacher.html", {"songs": _list_songs()})
 
 
+@app.get("/teacher/submissions", response_class=HTMLResponse)
+async def teacher_submissions_page(request: Request, date: str | None = None):
+    selected_date = date or date_cls.today().isoformat()
+    return templates.TemplateResponse(
+        request,
+        "teacher_submissions.html",
+        {"selected_date": selected_date},
+    )
+
+
 @app.get("/student", response_class=HTMLResponse)
 async def student_dashboard(request: Request, song: str | None = None):
     songs = _list_songs()
@@ -87,6 +98,16 @@ async def api_get_song(song_id: str):
 @app.get("/api/status")
 async def api_status():
     return {"solfege_classifier_ready": solfege_dsp.is_ready(), "sample_rate": SAMPLE_RATE}
+
+
+@app.get("/api/submissions", response_model=list[SubmissionRecord])
+async def api_list_submissions(date: str | None = None, student: str | None = None):
+    return [SubmissionRecord(**row) for row in db.list_submissions(date=date, student_name=student)]
+
+
+@app.get("/api/students", response_model=list[str])
+async def api_list_students():
+    return db.list_students()
 
 
 @app.post("/api/submit", response_model=AssessmentReport)

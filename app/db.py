@@ -103,8 +103,9 @@ def list_submissions(date: Optional[str] = None, student_name: Optional[str] = N
         query += " AND substr(s.submitted_at, 1, 10) = ?"
         params.append(date)
     if student_name:
-        query += " AND st.name = ? COLLATE NOCASE"
-        params.append(student_name.strip())
+        query += " AND st.name LIKE ? ESCAPE '\\' COLLATE NOCASE"
+        escaped = student_name.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        params.append(f"%{escaped}%")
     query += " ORDER BY s.submitted_at DESC"
 
     with _connect() as conn:
