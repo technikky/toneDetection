@@ -99,6 +99,16 @@ async def teacher_submissions_page(request: Request, date: str | None = None):
     )
 
 
+@app.get("/teacher/editor", response_class=HTMLResponse)
+async def teacher_editor_page(request: Request, song: str | None = None):
+    existing_song = _load_song(song) if song else None
+    return templates.TemplateResponse(
+        request,
+        "editor.html",
+        {"songs": _list_songs(), "existing_song": existing_song},
+    )
+
+
 @app.get("/student", response_class=HTMLResponse)
 async def student_dashboard(request: Request, song: str | None = None):
     songs = _list_songs()
