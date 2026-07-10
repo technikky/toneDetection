@@ -26,6 +26,16 @@ scores by student and by day.
 
 ## Quick start (development)
 
+**One click:** double-click `start-dev.bat`. If `offline-sdk/portable-python/`
+is present it uses that directly -- a self-contained Python with every
+dependency pre-installed, so this works with **no internet and no system
+Python at all**. Otherwise it falls back to a system Python, installing
+dependencies from `offline-sdk/` if present or PyPI if not. Either way it
+starts the dev server and opens your browser to `http://127.0.0.1:8000`
+automatically. Close the window or press Ctrl+C to stop.
+
+Manual equivalent:
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate          # Windows
