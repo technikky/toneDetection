@@ -404,7 +404,14 @@ async def submit_recording(
     from app.schemas import TargetNote
     target_notes = [TargetNote(**n) for n in song["notes"]]
 
-    report = grade_submission(np.asarray(audio, dtype=np.float32), sr, target_notes)
+    try:
+        report = grade_submission(np.asarray(audio, dtype=np.float32), sr, target_notes)
+    except Exception as exc:
+        log.exception("Grading failed for song=%s student=%s", song_id, student["id"])
+        raise HTTPException(
+            status_code=400,
+            detail="Could not grade this recording. Please record a longer take and try again.",
+        ) from exc
     db.record_submission(
         student_id=student["id"],
         song_id=song_id,

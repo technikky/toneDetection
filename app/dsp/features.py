@@ -18,8 +18,19 @@ def extract_features(y: np.ndarray, sr: int) -> np.ndarray:
         y = np.pad(y, (0, 512 - y.size))
 
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=N_MFCC)
-    delta = librosa.feature.delta(mfcc)
-    delta2 = librosa.feature.delta(mfcc, order=2)
+
+    # librosa.feature.delta needs at least `width` frames (default 9). A short
+    # note window can yield fewer, so clamp width to the frames available --
+    # it must be odd and >= 3. With too few frames for even a width-3 delta,
+    # fall back to zeros (a flat contour is a fine stand-in here).
+    n_frames = mfcc.shape[1]
+    if n_frames >= 3:
+        width = min(9, n_frames if n_frames % 2 == 1 else n_frames - 1)
+        delta = librosa.feature.delta(mfcc, width=width)
+        delta2 = librosa.feature.delta(mfcc, order=2, width=width)
+    else:
+        delta = np.zeros_like(mfcc)
+        delta2 = np.zeros_like(mfcc)
     centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
     zcr = librosa.feature.zero_crossing_rate(y)
 
