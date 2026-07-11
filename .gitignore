@@ -20,3 +20,4 @@ app/data/license.txt
 !app/data/samples/*.wav
 .DS_Store
 Thumbs.db
+build_rebuild.log
