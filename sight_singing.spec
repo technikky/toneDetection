@@ -8,6 +8,16 @@ Only read-only, ship-with-the-app assets are bundled (templates, static,
 the exercise catalog, the pre-trained solfège classifier). Uploads are
 written next to the .exe at runtime (see app/config.py) and never shipped.
 """
+from PyInstaller.utils.hooks import collect_submodules
+
+# The pickled solfège classifier is a Pipeline wrapping CalibratedClassifierCV
+# (sklearn.calibration) around an SVC. PyInstaller only sees imports written
+# in source, so estimators referenced solely inside the pickle -- e.g.
+# sklearn.calibration -- get dropped, and joblib.load() then fails at runtime
+# with ModuleNotFoundError. Pull in every sklearn/scipy submodule so any
+# estimator the model contains can unpickle.
+hidden = collect_submodules("sklearn") + collect_submodules("scipy")
+
 a = Analysis(
     ["run_app.py"],
     pathex=[],
@@ -18,7 +28,7 @@ a = Analysis(
         ("app/data/songs", "app/data/songs"),
         ("app/models", "app/models"),
     ],
-    hiddenimports=[],
+    hiddenimports=hidden,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
